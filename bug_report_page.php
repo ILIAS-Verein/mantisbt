@@ -555,7 +555,7 @@ if( $t_show_attachments ) {
 <?php if( $t_show_steps_to_reproduce ) { ?>
 		<tr>
 			<th class="category">
-				<label for="steps_to_reproduce"><?php print_documentation_link( 'steps_to_reproduce' ) ?></label>
+                <!-- patch start --><span class="required">*</span> <!-- patch end --><label for="steps_to_reproduce"><?php print_documentation_link( 'steps_to_reproduce' ) ?></label>
 			</th>
 			<td>
 				<textarea class="form-control" <?php echo helper_get_tab_index() ?> id="steps_to_reproduce" name="steps_to_reproduce" cols="80" rows="10"><?php echo string_textarea( $f_steps_to_reproduce ) ?></textarea>
