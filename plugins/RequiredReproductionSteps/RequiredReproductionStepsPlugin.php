@@ -10,7 +10,7 @@ class RequiredReproductionStepsPlugin extends MantisPlugin {
 
 		$this->version = '1.0';     # Plugin version string
 		$this->requires = array(    # Plugin dependencies
-			'MantisCore' => '2.0',  # Should always depend on an appropriate
+			'MantisCore' => '2.3.0',  # Should always depend on an appropriate
 			# version of MantisBT
 		);
 
