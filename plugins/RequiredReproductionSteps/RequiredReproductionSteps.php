@@ -1,5 +1,8 @@
 <?php
 class RequiredReproductionSteps extends MantisPlugin {
+	private $is_rest = false;
+	private $is_soap = false;
+
 	function register() {
 		$this->name = 'RequiredReproductionSteps';    # Proper name of plugin
 		$this->description = 'Making field "Reproduction Steps" required.';    # Short description of the plugin
@@ -16,35 +19,37 @@ class RequiredReproductionSteps extends MantisPlugin {
 		$this->url = 'ilias.de';            # Support webpage
 	}
 
+	function init() {
+		if(basename($_SERVER['REQUEST_URI']) == "mantisconnect.php") {
+			$this->is_soap = true;
+		}
+	}
+
 	function events() {
 		return array(
-			'EVENT_REPORT_BUG_FORM' => EVENT_TYPE_EXECUTE,
 			'EVENT_REPORT_BUG_DATA' => EVENT_TYPE_CHAIN,
-			'EVENT_UPDATE_BUG_DATA' => EVENT_TYPE_CHAIN
+			'EVENT_UPDATE_BUG_DATA' => EVENT_TYPE_CHAIN,
+			'EVENT_REST_API_ROUTES' => EVENT_TYPE_CHAIN
 		);
 	}
 
 	function hooks() {
 		return array(
-			/*'EVENT_EXAMPLE_FOO' => 'foo',
-			'EVENT_EXAMPLE_BAR' => 'bar',*/
-			'EVENT_REPORT_BUG_FORM' => 'form',
 			'EVENT_REPORT_BUG_DATA' => 'validation',
-			'EVENT_UPDATE_BUG_DATA' => 'validation'
+			'EVENT_UPDATE_BUG_DATA' => 'validation',
+			'EVENT_REST_API_ROUTES' => 'is_rest'
 		);
 	}
 
-	function config() {
-		return array(
-			/*'foo_or_bar' => 'foo',*/
-		);
-	}
-
-	function form( $p_event ) {
-
+	function is_rest($p_event, $p_chained_param){
+		$this->is_rest = true;
 	}
 
 	function validation( $p_event, $p_chained_param ) {
+		if($this->is_rest || $this->is_soap)
+		{
+			return;
+		}
 
 		if( is_blank( $p_chained_param->steps_to_reproduce  ) ) {
 			error_parameters( lang_get( 'steps_to_reproduce ' ) );
