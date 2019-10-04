@@ -1,5 +1,5 @@
 <?php
-class RequiredReproductionSteps extends MantisPlugin {
+class RequiredReproductionStepsPlugin extends MantisPlugin {
 	private $is_rest = false;
 	private $is_soap = false;
 
