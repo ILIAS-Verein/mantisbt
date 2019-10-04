@@ -52,7 +52,7 @@ class RequiredReproductionStepsPlugin extends MantisPlugin {
 		}
 
 		if( is_blank( $p_chained_param->steps_to_reproduce  ) ) {
-			error_parameters( lang_get( 'steps_to_reproduce ' ) );
+			error_parameters( lang_get( 'steps_to_reproduce' ) );
 			trigger_error( ERROR_EMPTY_FIELD, ERROR );
 		}
 
