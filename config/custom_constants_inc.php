@@ -9,16 +9,11 @@
 
 
 	# Custom status code
-	define ( 'OPEN', 10);
 	define ( 'UNASSIGNED', 15 );
-        define ( 'FEEDBACK', 20 );
 	define ( 'NEEDS_JF_DECISION', 23 );
 	define ( 'POSTPONED', 25 );
 	define ( 'FUNDING_NEEDED', 35 );
-        define ( 'ASSIGNED', 50 );
 	define ( 'FIXING_ACC_TO_PRIO', 60);
-        define ( 'RESOLVED', 80 );
-        define ( 'CLOSED', 90);
 	define ( 'VEREINSMITGLIED', 40 );
 
 ?>

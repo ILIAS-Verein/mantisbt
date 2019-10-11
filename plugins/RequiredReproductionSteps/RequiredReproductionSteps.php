@@ -43,19 +43,20 @@ class RequiredReproductionStepsPlugin extends MantisPlugin {
 
 	function is_rest($p_event, $p_chained_param){
 		$this->is_rest = true;
+		return $p_chained_param;
 	}
 
 	function validation( $p_event, $p_chained_param ) {
 		if($this->is_rest || $this->is_soap)
 		{
-			return;
+			return $p_chained_param;
 		}
 
 		if( is_blank( $p_chained_param->steps_to_reproduce  ) ) {
 			error_parameters( lang_get( 'steps_to_reproduce' ) );
 			trigger_error( ERROR_EMPTY_FIELD, ERROR );
 		}
-
+		return $p_chained_param;
 	}
 
 }
