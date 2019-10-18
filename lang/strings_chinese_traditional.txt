@@ -38,6 +38,7 @@
  * @ingroup Language
  * @file
  *
+ * @author A2093064
  * @author Anakmalaysia
  * @author Cwlin0416
  * @author Firesueprtom
@@ -48,6 +49,7 @@
  * @author Macofe
  * @author Mark85296341
  * @author Oapbtommy
+ * @author Sanmosa
  * @author Simon Shek
  * @author Smarky
  * @author Wehwei
@@ -385,7 +387,6 @@ $s_sponsor_show = '顯示全部';
 $s_payment_updated = '已更新付款資訊。';
 $s_account_updated_msg = '你的帳號已經成功更新...';
 $s_email_updated = '已成功更新電子郵件信箱';
-$s_realname_duplicated = '已有其他使用者使用這個真實姓名';
 $s_realname_updated = '真實姓名已成功更新';
 $s_password_updated = '密碼已成功更新';
 $s_multiple_projects = '你所選擇的問題分屬不同的專案，以下僅顯示所有專案共同的參數，或者您可以指定相同類型的專案以設定詳細參數。';
@@ -590,6 +591,7 @@ $s_date_created = '建立日期';
 $s_last_visit = '上次瀏覽';
 $s_last_visit_label = '上次瀏覽：';
 $s_edit_user_link = '編輯使用者';
+$s_search_user_hint = '使用者名稱、真實名稱、或電子郵件';
 $s_separate_list_items_by = '(使用 "%1$s" 分隔清單項目)';
 $s_config_all_projects = '注意: 這些設置會影響所有專案，除非在專案階層有覆蓋設定值。';
 $s_config_project = '注意: 此設定參數僅影響 %1$s 專案。';
@@ -663,6 +665,7 @@ $s_configuration_corrupted = '資料庫中的設定資訊已損毀。';
 $s_set_configuration_option_action_create = '建立設置選項';
 $s_set_configuration_option_action_edit = '編輯設置選項';
 $s_set_configuration_option_action_clone = '複製設置選項';
+$s_set_configuration_option_action_view = '檢視設置選項';
 $s_plugin = '套件';
 $s_plugins_installed = '已安裝的套件';
 $s_plugins_available = '可用的套件';
@@ -727,6 +730,9 @@ $s_create_new_subproject_link = '新增子專案';
 $s_unlink_link = '刪除';
 $s_show_global_users = '顯示擁有全域存取權的使用者';
 $s_hide_global_users = '隱藏擁有全域存取權的使用者';
+$s_review_changes = '檢閱更改';
+$s_review_changes_confirmation = '您確定要套用以下更改嗎？';
+$s_review_changes_empty = '沒有已選的更改';
 $s_add_project_title = '新增專案';
 $s_upload_file_path = '上傳檔案路徑';
 $s_add_project_button = '新增專案';
@@ -836,6 +842,8 @@ $s_add_user_button = '新增使用者';
 $s_project_selection_title = '專案選擇';
 $s_remove_link = '移除';
 $s_remove_all_link = '全部移除';
+$s_remove_project_user_title = '從專案移除使用者存取';
+$s_modify_project_user_title = '變動在專案的使用者存取';
 $s_updated_user_msg = '已成功更新使用者。';
 $s_must_enter_category = '您必須選擇類別';
 $s_must_enter_severity = '您必須選擇嚴重性';
@@ -906,6 +914,7 @@ $s_developer_stats = '開發者狀態';
 $s_reporter_stats = '回報人狀態';
 $s_orct = '(未解決/已解決/已結束/總數)';
 $s_summary_header = '開啟/已解決/已結束/總計/已解決比例/比例';
+$s_summary_notice_filter_is_applied = '查詢條件已套用';
 $s_any = '任意';
 $s_all = '全部';
 $s_show = '每頁顯示筆數';
@@ -963,6 +972,8 @@ $s_manage_filter_page_title = '管理查詢條件';
 $s_manage_filter_edit_page_title = '編輯查詢條件';
 $s_delete_filter_button = '刪除';
 $s_apply_filter_button = '套用';
+$s_temporary_filter = '臨時查詢條件';
+$s_set_as_persistent_filter = '設定為固定查詢條件';
 $s_view_simple_link = '簡易檢視';
 $s_product_build = '產品 Build';
 $s_system_profile = '系統描述';
@@ -1098,6 +1109,8 @@ $s_update_issue_status = '更新問題狀態';
 $s_set_view_status = '當回報新問題或說明時設定檢視狀態';
 $s_update_view_status = '更改現有問題或說明的檢視狀態';
 $s_show_list_of_users_monitoring_issue = '顯示追蹤此問題的使用者清單';
+$s_add_users_monitoring_issue = '新增追蹤到問題裡';
+$s_remove_users_monitoring_issue = '從問題上移除追蹤';
 $s_notes = '說明';
 $s_add_notes = '新增說明';
 $s_view_private_notes = '檢視其他人的非公開說明';
@@ -1110,7 +1123,7 @@ $s_delete_attachments = '刪除附加檔案';
 $s_delete_attachment_button = '刪除';
 $s_delete_attachment_sure_msg = '你確定你要刪除這個附加檔案嗎？';
 $s_upload_issue_attachments = '上傳問題相關附加檔案';
-$s_filters = '篩選器';
+$s_filters = '查詢條件';
 $s_save_filters = '儲存查詢條件';
 $s_save_filters_as_shared = '儲存共用的查詢條件';
 $s_use_saved_filters = '使用已儲存的查詢條件';
@@ -1238,14 +1251,16 @@ $s_month_october = '10 月';
 $s_month_november = '11 月';
 $s_month_december = '12 月';
 $s_timeline_issue_created = '<span class="username">%1$s</span> 已建立問題 <span class="issue_id">%2$s</span>';
+$s_timeline_issue_file_added = '<span class="username">%1$s</span> 已附加檔案 <em>%3$s</em> 至問題 <span class="issue_id">%2$s</span>';
+$s_timeline_issue_file_deleted = '<span class="username">%1$s</span> 已從問題 <span class="issue_id">%2$s</span> 移除了檔案 <em>%3$s</em>';
 $s_timeline_issue_note_created = '<span class="username">%1$s</span> 已說明問題 <span class="issue_id">%2$s</span>';
 $s_timeline_issue_monitor = '<span class="username">%1$s</span> 正在監視問題 <span class="issue_id">%2$s</span>';
 $s_timeline_issue_unmonitor = '<span class="username">%1$s</span> 停止監視問題 <span class="issue_id">%2$s</span>';
-$s_timeline_issue_tagged = '<span class="username">%1$s</span> 標記問題 <span class="issue_id">%2$s</span> 為 <span class="tag_name">%3$s</span>';
-$s_timeline_issue_untagged = '<span class="username">%1$s</span> 已移除 <span class="tag_name">%3$s</span> 自問題 <span class="issue_id">%2$s</span>';
+$s_timeline_issue_tagged = '<span class="username">%1$s</span> 已標記了問題 <span class="issue_id">%2$s</span> 為 <span class="tag_name">%3$s</span>';
+$s_timeline_issue_untagged = '<span class="username">%1$s</span> 已從問題 <span class="issue_id">%2$s</span> 移除了 <span class="tag_name">%3$s</span>';
 $s_timeline_issue_resolved = '<span class="username">%1$s</span> 已解決問題 <span class="issue_id">%2$s</span>';
 $s_timeline_issue_closed = '<span class="username">%1$s</span> 已結束問題 <span class="issue_id">%2$s</span>';
-$s_timeline_issue_reopened = '<span class="username">%1$s</span> 重新開啟問題 <span class="issue_id">%2$s</span>';
+$s_timeline_issue_reopened = '<span class="username">%1$s</span> 已重新開啟問題 <span class="issue_id">%2$s</span>';
 $s_timeline_issue_assigned = '<span class="username">%1$s</span> 指派問題 <span class="issue_id">%2$s</span> 給 <span class="username">%3$s</span>';
 $s_timeline_issue_assigned_to_self = '<span class="username">%1$s</span> 已處理問題 <span class="issue_id">%2$s</span>';
 $s_timeline_issue_unassigned = '<span class="username">%1$s</span> 取消指派問題 <span class="issue_id">%2$s</span>';
@@ -1274,11 +1289,15 @@ $MANTIS_ERROR[ERROR_CONFIG_OPT_CANT_BE_SET_IN_DB] = '設定選項 "%1$s" 必須�
 $MANTIS_ERROR[ERROR_CONFIG_OPT_BAD_SYNTAX] = '無法設定設置選項 "%1$s": %2$s';
 $MANTIS_ERROR[ERROR_LANG_STRING_NOT_FOUND] = '查無字串 "%1$s"。';
 $MANTIS_ERROR[ERROR_BUGNOTE_NOT_FOUND] = '查無說明。';
-$MANTIS_ERROR[ERROR_PROJECT_NOT_FOUND] = '查無專案 \"%1$s\"。';
 $MANTIS_ERROR[ERROR_DB_FIELD_NOT_FOUND] = '查無資料庫欄位 \'%1$s\'。';
 $MANTIS_ERROR[ERROR_HANDLER_ACCESS_TOO_LOW] = '問題處理者沒有足夠的權限處理目前狀態的問題。';
+$MANTIS_ERROR[ERROR_PROJECT_HIERARCHY_DISABLED] = '專案階級（子專案）已停用。';
+$MANTIS_ERROR[ERROR_PROJECT_NOT_FOUND] = '查無專案 \"%1$s\"。';
 $MANTIS_ERROR[ERROR_PROJECT_NAME_NOT_UNIQUE] = '專案名稱已經存在，請返回並輸入其他名稱。';
 $MANTIS_ERROR[ERROR_PROJECT_NAME_INVALID] = '無效的專案名稱，專案名稱不可空白。';
+$MANTIS_ERROR[ERROR_PROJECT_RECURSIVE_HIERARCHY] = '此操作會造成子專案無窮繼承';
+$MANTIS_ERROR[ERROR_PROJECT_SUBPROJECT_DUPLICATE] = '專案「%1$s」已是「%2$s」的子專案。';
+$MANTIS_ERROR[ERROR_PROJECT_SUBPROJECT_NOT_FOUND] = '專案「%1$s」不是「%2$s」的子專案。';
 $MANTIS_ERROR[ERROR_USER_BY_NAME_NOT_FOUND] = '查無名稱為 "%1$s" 的使用者。';
 $MANTIS_ERROR[ERROR_USER_BY_ID_NOT_FOUND] = '查無代號為 "%1$d" 的使用者。';
 $MANTIS_ERROR[ERROR_USER_BY_EMAIL_NOT_FOUND] = '查無電子郵件為 "%1$s" 的使用者。';
@@ -1331,8 +1350,6 @@ $MANTIS_ERROR[ERROR_VERSION_NOT_FOUND] = '查無 "%1$s" 版本。';
 $MANTIS_ERROR[ERROR_USER_NAME_INVALID] = '使用者名稱無效。使用者名稱僅能包含英文、數字、空格、 "-"  或  "_"  。';
 $MANTIS_ERROR[ERROR_USER_REAL_NAME_INVALID] = '該使用者的真實名稱是無效的。';
 $MANTIS_ERROR[ERROR_USER_DOES_NOT_HAVE_REQ_ACCESS] = '使用者沒有足夠的存取權限。';
-$MANTIS_ERROR[ERROR_USER_REAL_MATCH_USER] = '您填寫的 "真實姓名" 與其他使用者的登入名稱相同，
-請選擇其他的名稱。';
 $MANTIS_ERROR[ERROR_SPONSORSHIP_NOT_ENABLED] = '未開啟贊助者功能。';
 $MANTIS_ERROR[ERROR_SPONSORSHIP_NOT_FOUND] = '查無贊助者 %1$d。';
 $MANTIS_ERROR[ERROR_SPONSORSHIP_AMOUNT_TOO_LOW] = '贊助金額 (%1$s) 底於最低金額限制 (%2$s)。';
@@ -1341,7 +1358,7 @@ $MANTIS_ERROR[ERROR_SPONSORSHIP_ASSIGNER_ACCESS_LEVEL_TOO_LOW] = '拒絕存取�
 $MANTIS_ERROR[ERROR_SPONSORSHIP_SPONSOR_NO_EMAIL] = '贊助者未提供電子郵件信箱，請更新您的基本資料。';
 $MANTIS_ERROR[ERROR_CONFIG_OPT_INVALID] = '設置選項 "%1$s" 的設定值無效 "%2$s"。';
 $MANTIS_ERROR[ERROR_BUG_READ_ONLY_ACTION_DENIED] = '無法執行此動作，因問題 "%1$d" 目前為唯讀狀態。';
-$MANTIS_ERROR[ERROR_BUG_RESOLVE_DEPENDANTS_BLOCKING] = '此問題在其他相依問題還沒解決前無法設為已解決。';
+$MANTIS_ERROR[ERROR_BUG_RESOLVE_DEPENDANTS_BLOCKING] = '此問題在其它相依問題還沒解決前無法設為已解決。若您尚未看到任何相依問題，請向您的系統管理員請求專案存取權限。';
 $MANTIS_ERROR[ERROR_RELATIONSHIP_NOT_FOUND] = '查無相關問題。';
 $MANTIS_ERROR[ERROR_RELATIONSHIP_ACCESS_LEVEL_TO_DEST_BUG_TOO_LOW] = '拒絕存取：問題 %1$d 需要更高的存取權限。';
 $MANTIS_ERROR[ERROR_RELATIONSHIP_SAME_BUG] = '不可將自己設定為相關問題。';
@@ -1351,7 +1368,6 @@ $MANTIS_ERROR[ERROR_LOST_PASSWORD_NO_EMAIL_SPECIFIED] = '你必須提供一個�
 $MANTIS_ERROR[ERROR_LOST_PASSWORD_NOT_MATCHING_DATA] = '沒有符合您提供資訊的帳號！';
 $MANTIS_ERROR[ERROR_LOST_PASSWORD_CONFIRM_HASH_INVALID] = '確認網址不正確或已使用過，請重新註冊。';
 $MANTIS_ERROR[ERROR_LOST_PASSWORD_MAX_IN_PROGRESS_ATTEMPTS_REACHED] = '目前請求數量已超出系統限制，請聯繫系統管理員。';
-$MANTIS_ERROR[ERROR_PROJECT_RECURSIVE_HIERARCHY] = '此操作會造成子專案無窮繼承';
 $MANTIS_ERROR[ERROR_USER_CHANGE_LAST_ADMIN] = '您不可以將最後一個管理者帳號移除或降級，若要完成您目前的動作請先建立另一個管理者帳號。';
 $MANTIS_ERROR[ERROR_PAGE_REDIRECTION] = '頁面導向錯誤，請確認 config_inc.php 或 custom_*.php 檔案的 PHP 區塊 (&lt;?php ?&gt;) 之外沒有任何空白的字元。';
 $MANTIS_ERROR[ERROR_TAG_NOT_FOUND] = '查無此標籤名稱。';
@@ -1392,9 +1408,10 @@ $MANTIS_ERROR[ERROR_BUG_CONFLICTING_EDIT] = '此問題已經由其他使用者�
 $MANTIS_ERROR[ERROR_SPAM_SUSPECTED] = '您已達到在 %d 秒内允許 %d 次事件的使用限制；為避免垃圾訊息產生已阻擋您的行為，請稍後再重試。';
 $MANTIS_ERROR[ERROR_FIELD_TOO_LONG] = '欄位 "%1$s" 必須小於或等於 %2$d 字元長度。';
 $MANTIS_ERROR[ERROR_API_TOKEN_NAME_NOT_UNIQUE] = 'API 密鑰名稱 "%s" 已被使用。請返回重新選擇。';
+$MANTIS_ERROR[ERROR_LOGFILE_NOT_WRITABLE] = '在 $g_log_destination「%s」指定的檔案不可寫入。';
 $s_dropzone_default_message = '將檔案放至這裡上傳 (或點選)';
 $s_dropzone_fallback_message = '您的瀏覽器不支援托放檔案上傳功能。';
-$s_dropzone_file_too_big = '檔案太大 ({{filesize}}MiB)。檔案大小上限： {{maxFilesize}}MiB。';
+$s_dropzone_file_too_big = '檔案太大（{{filesize}}MiB）。檔案大小上限：{{maxFilesize}}MiB。';
 $s_dropzone_invalid_file_type = '您不能上傳此類型的檔案。';
 $s_dropzone_response_error = '伺服器回應代碼 {{statusCode}}。';
 $s_dropzone_cancel_upload = '取消上傳';
@@ -1402,3 +1419,10 @@ $s_dropzone_cancel_upload_confirmation = '您確定要取消此次上傳？';
 $s_dropzone_remove_file = '移除檔案';
 $s_dropzone_max_files_exceeded = '您無法上傳更多的檔案。';
 $s_dropzone_not_supported = 'Dropzone.js 不支援較舊的瀏覽器！';
+$s_dropzone_multiple_files_too_big = '已下檔案：{{files}}超過最大允許檔案大小（{{maxFilesize}} MiB）';
+$s_save = '儲存';
+$s_reset = '重設';
+$s_persist = '固定';
+$s_load = '載入';
+$s_apply_changes = '套用更改';
+$s_undo = '還原';

@@ -64,7 +64,7 @@ $g_cache_file_count = array();
  */
 function file_attach_files( $p_bug_id, $p_files ) {
 	if( $p_files === null || count( $p_files ) == 0 ) {
-		return;
+		return array();
 	}
 
 	$t_file_infos = array();
@@ -103,7 +103,7 @@ function file_get_display_name( $p_filename ) {
 }
 
 /**
- * Fills the cache with the attachement count from a list of bugs
+ * Fills the cache with the attachment count from a list of bugs
  * If the bug doesn't have attachments, cache its value as 0.
  * @global array $g_cache_file_count
  * @param array $p_bug_ids Array of bug ids
@@ -850,7 +850,7 @@ function file_add( $p_bug_id, array $p_file, $p_table = 'bug', $p_title = '', $p
 	}
 
 	$t_query = 'INSERT INTO ' . $t_file_table . '
-		( ' . implode(', ', array_keys( $t_param ) ) . ' )
+		( ' . implode( ', ', array_keys( $t_param ) ) . ' )
 	VALUES
 		( ' . $t_query_param . ' )';
 	db_query( $t_query, array_values( $t_param ) );
@@ -919,7 +919,7 @@ function file_allow_bug_upload( $p_bug_id = null, $p_user_id = null, $p_project_
 		$p_user_id = auth_get_current_user_id();
 	}
 
-	# If uploads are disbled just return false
+	# If uploads are disabled just return false
 	if( !file_is_uploading_enabled() ) {
 		return false;
 	}
@@ -1027,7 +1027,7 @@ function file_get_mime_type( $p_file_path ) {
 /**
  * Get mime type for the specified content.
  *
- * @param string $p_file_path The file path.
+ * @param string $p_content The content.
  * @return boolean|string The mime type or false on failure.
  */
 function file_get_mime_type_for_content( $p_content ) {
@@ -1246,4 +1246,13 @@ function file_get_content_type_override( $p_filename ) {
 	}
 
 	return null;
+}
+
+/**
+ * Return the maximum file size that can be uploaded, based on mantis and php
+ * configured setting.
+ * @return integer	File size in bytes
+ */
+function file_get_max_file_size() {
+	return (int)min( ini_get_number( 'upload_max_filesize' ), ini_get_number( 'post_max_size' ), config_get( 'max_file_size' ) );
 }

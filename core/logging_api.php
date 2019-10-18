@@ -106,7 +106,27 @@ function log_event( $p_level, $p_msg ) {
 		case 'none':
 			break;
 		case 'file':
-			error_log( $t_php_event . PHP_EOL, 3, $t_modifiers );
+			if( isset( $t_modifiers ) ) {
+				static $s_log_writable = null;
+
+				if( $s_log_writable ) {
+					error_log( $t_php_event . PHP_EOL, 3, $t_modifiers );
+				} elseif( $s_log_writable === null ) {
+					# Try to log the event, suppress errors in case the file is not writable
+					$s_log_writable = @error_log( $t_php_event . PHP_EOL, 3, $t_modifiers );
+
+					if( !$s_log_writable ) {
+						# Display a one-time warning message and write it to PHP system log as well.
+						# Note: to ensure the error is shown regardless of $g_display_error settings,
+						# we manually set the message and log it with error_log_delayed(), which will
+						# cause it to be displayed at page bottom.
+						error_parameters( $t_modifiers );
+						$t_message = error_string( ERROR_LOGFILE_NOT_WRITABLE );
+						error_log_delayed( $t_message );
+						error_log( 'MantisBT - ' . htmlspecialchars_decode( $t_message ) );
+					}
+				}
+			}
 			break;
 		case 'page':
 			global $g_log_events;
@@ -156,7 +176,7 @@ function log_print_to_page() {
 		$t_total_query_execution_time = 0;
 		$t_unique_queries = array();
 		$t_total_queries_count = 0;
-		$t_total_event_count = count( $g_log_events );
+		$t_total_event_count = $g_log_events === null ? 0 : count( $g_log_events );
 
 
 		echo "<div class=\"space-10\"></div>";

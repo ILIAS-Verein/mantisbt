@@ -25,6 +25,8 @@
 
 require_once( dirname( __FILE__ ) . '/mc_core.php' );
 
+use Mantis\Exceptions\ClientException;
+
 /**
  * Check if an issue with the given id exists.
  *
@@ -384,7 +386,7 @@ function mci_issue_get_due_date( BugData $p_bug ) {
  * @param integer $p_issue_id       Issue id to apply custom field values to.
  * @param array   &$p_custom_fields The array of custom field values as described in the webservice complex types.
  * @param boolean $p_log_insert     Create history logs for new values.
- * @return booleamn|SoapFault|RestFault true for sucess, otherwise fault.
+ * @return boolean|SoapFault|RestFault true for success, otherwise fault.
  */
 function mci_issue_set_custom_fields( $p_issue_id, array &$p_custom_fields = null, $p_log_insert ) {
 	# set custom field values on the submitted issue
@@ -1764,8 +1766,11 @@ function mci_issue_data_as_header_array( BugData $p_issue_data ) {
 		}
 		$t_issue['resolution'] = $p_issue_data->resolution;
 
-		$t_issue['attachments_count'] = count( mci_issue_get_attachments( $p_issue_data->id ) );
-		$t_issue['notes_count'] = count( mci_issue_get_notes( $p_issue_data->id ) );
+		$t_attachments = mci_issue_get_attachments( $p_issue_data->id );
+		$t_issue['attachments_count'] = $t_attachments === null ? 0 : count( $t_attachments );
+
+		$t_notes = mci_issue_get_notes( $p_issue_data->id );
+		$t_issue['notes_count'] = $t_notes === null ? 0 : count( $t_notes );
 
 		return $t_issue;
 }

@@ -264,13 +264,15 @@ function custom_field_cache_values( array $p_bug_id_array, array $p_field_id_arr
 		if( !isset( $g_cache_cf_bug_values[$c_bug_id] ) ) {
 			$g_cache_cf_bug_values[$c_bug_id] = array();
 		}
+
 		$c_field_id = (int)$t_row['field_id'];
 		$t_value_column = ( $f_cf_defs[$c_field_id]['type'] == CUSTOM_FIELD_TYPE_TEXTAREA ? 'text' : 'value' );
 		$t_value = $t_row[$t_value_column];
 		if( null !== $t_value ) {
 			$t_value = custom_field_database_to_value( $t_value, $f_cf_defs[$c_field_id]['type'] );
 		}
-		# non-existant will be stored as null
+
+		# non-existent will be stored as null
 		$g_cache_cf_bug_values[$c_bug_id][$c_field_id] = $t_value;
 	}
 }
@@ -779,7 +781,7 @@ function custom_field_get_linked_ids( $p_project_id = ALL_PROJECTS ) {
 
 	if( ALL_PROJECTS == $p_project_id ) {
 		$t_user_id = auth_get_current_user_id();
-		# Select all projects accesible by the user
+		# Select all projects accessible by the user
 		$t_project_ids = user_get_all_accessible_projects( $t_user_id );
 	} elseif( !is_array( $p_project_id ) ) {
 		$t_project_ids = array( $p_project_id );
@@ -824,7 +826,7 @@ function custom_field_get_linked_ids( $p_project_id = ALL_PROJECTS ) {
 			unset( $t_uncached_projects[$t_project_id] );
 		}
 
-		# save empty array for those projects that dont appear in the results
+		# save empty array for those projects that don't appear in the results
 		if( !empty( $t_uncached_projects ) ) {
 			foreach( $t_uncached_projects as $t_pr_id ) {
 				$g_cache_cf_linked[$t_pr_id] = array();
@@ -911,7 +913,7 @@ function custom_field_get_display_name( $p_name ) {
 		$p_name .= ' (' . $t_local_name . ')';
 	}
 
-	return string_display( $p_name );
+	return string_display_line( $p_name );
 }
 
 /**
@@ -1398,7 +1400,7 @@ function custom_field_set_sequence( $p_field_id, $p_project_id, $p_sequence ) {
  * Print an input field
  * $p_field_def contains the definition of the custom field (including it's field id
  * $p_bug_id    contains the bug where this field belongs to. If it's left
- * away, it'll default to 0 and thus belongs to a new (i.e. non-existant) bug
+ * away, it'll default to 0 and thus belongs to a new (i.e. non-existent) bug
  * NOTE: This probably belongs in the print_api.php
  * @param array   $p_field_def Custom field definition.
  * @param integer $p_bug_id    A bug identifier.

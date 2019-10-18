@@ -271,7 +271,7 @@ function get_capability_boolean( $p_caption, $p_threshold, $p_all_projects_only 
 	$t_can_change = access_has_project_level( config_get_access( $p_threshold ), $g_project_id, $g_user )
 			  && ( ( ALL_PROJECTS == $g_project_id ) || !$p_all_projects_only );
 
-	echo "<tr>\n\t<td>" . string_display( $p_caption ) . "</td>\n";
+	echo "<tr>\n\t<td>" . string_display_line( $p_caption ) . "</td>\n";
 
 	# Value
 	$t_color = set_color( $p_threshold, $t_file, $t_global, $t_project, $t_can_change );
@@ -314,7 +314,7 @@ function get_capability_enum( $p_caption, $p_threshold, $p_enum, $p_all_projects
 			  && ( ( ALL_PROJECTS == $g_project_id ) || !$p_all_projects_only );
 
 	echo '<tr>' . "\n";
-	echo "\t" . '<td>' . string_display( $p_caption ) . '</td>' . "\n";
+	echo "\t" . '<td>' . string_display_line( $p_caption ) . '</td>' . "\n";
 
 	# Value
 	$t_color = set_color( $p_threshold, $t_file, $t_global, $t_project, $t_can_change );
@@ -351,7 +351,7 @@ echo '<br />' . "\n";
 if( ALL_PROJECTS == $g_project_id ) {
 	$t_project_title = lang_get( 'config_all_projects' );
 } else {
-	$t_project_title = sprintf( lang_get( 'config_project' ), string_display( project_get_name( $g_project_id ) ) );
+	$t_project_title = sprintf( lang_get( 'config_project' ), string_display_line( project_get_name( $g_project_id ) ) );
 }
 
 echo '<div class="col-md-12 col-xs-12">' . "\n";
@@ -390,6 +390,8 @@ get_capability_row( lang_get( 'view_private_issues' ), 'private_bug_threshold' )
 get_capability_row( lang_get( 'set_view_status' ), 'set_view_status_threshold' );
 get_capability_row( lang_get( 'update_view_status' ), 'change_view_status_threshold' );
 get_capability_row( lang_get( 'show_list_of_users_monitoring_issue' ), 'show_monitor_list_threshold' );
+get_capability_row( lang_get( 'add_users_monitoring_issue' ), 'monitor_add_others_bug_threshold' );
+get_capability_row( lang_get( 'remove_users_monitoring_issue' ), 'monitor_delete_others_bug_threshold' );
 get_capability_boolean( lang_get( 'set_status_assigned' ), 'auto_set_status_to_assigned' );
 get_capability_enum( lang_get( 'assigned_status' ), 'bug_assigned_status', 'status' );
 get_capability_boolean( lang_get( 'limit_access' ), 'limit_reporters', true );
@@ -409,6 +411,8 @@ get_section_end();
 # Others
 get_section_begin_mcwt( lang_get( 'others' ) );
 get_capability_row( lang_get( 'view' ) . ' ' . lang_get( 'changelog_link' ), 'view_changelog_threshold' );
+get_capability_row( lang_get( 'view' ) . ' ' . lang_get( 'roadmap_link' ), 'roadmap_view_threshold' );
+get_capability_row( lang_get( 'view' ) . ' ' . lang_get( 'summary_link' ), 'view_summary_threshold' );
 get_capability_row( lang_get( 'view' ) . ' ' . lang_get( 'assigned_to' ), 'view_handler_threshold' );
 get_capability_row( lang_get( 'view' ) . ' ' . lang_get( 'bug_history' ), 'view_history_threshold' );
 get_capability_row( lang_get( 'send_reminders' ), 'bug_reminder_threshold' );

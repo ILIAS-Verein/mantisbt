@@ -174,6 +174,8 @@ set_capability_row( 'update_bug_status_threshold' );
 set_capability_row( 'set_view_status_threshold' );
 set_capability_row( 'change_view_status_threshold' );
 set_capability_row( 'show_monitor_list_threshold' );
+set_capability_row( 'monitor_add_others_bug_threshold' );
+set_capability_row( 'monitor_delete_others_bug_threshold' );
 set_capability_boolean( 'auto_set_status_to_assigned' );
 set_capability_enum( 'bug_assigned_status' );
 set_capability_boolean( 'limit_reporters', true );
@@ -189,6 +191,8 @@ set_capability_row( 'bugnote_user_change_view_state_threshold' );
 
 # Others
 set_capability_row( 'view_changelog_threshold' );
+set_capability_row( 'roadmap_view_threshold' );
+set_capability_row( 'view_summary_threshold' );
 set_capability_row( 'view_handler_threshold' );
 set_capability_row( 'view_history_threshold' );
 set_capability_row( 'bug_reminder_threshold' );

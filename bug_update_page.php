@@ -46,8 +46,6 @@
  * @uses version_api.php
  */
 
-$g_allow_browser_cache = 1;
-
 require_once( 'core.php' );
 require_api( 'access_api.php' );
 require_api( 'authentication_api.php' );
@@ -416,9 +414,10 @@ if( $t_show_status || $t_show_resolution ) {
 		echo '<th class="category"><label for="status">' . lang_get( 'status' ) . '</label></th>';
 
 		# choose color based on status
-		$t_status_label = html_get_status_css_class( $t_bug->status );
+		$t_status_css = html_get_status_css_fg( $t_bug->status );
 
-		echo '<td class="' . $t_status_label .  '">';
+		echo '<td class="bug-status">';
+		echo '<i class="fa fa-square fa-status-box ' . $t_status_css . '"></i> ';
 		print_status_option_list( 'status', $t_bug->status,
 			access_can_close_bug( $t_bug ),
 			$t_bug->project_id );
@@ -641,7 +640,9 @@ if( $t_show_description ) {
 	echo '<tr>';
 	echo '<th class="category"><label for="description">' . lang_get( 'description' ) . '</label></th>';
 	echo '<td colspan="5">';
-	echo '<textarea class="form-control" ', helper_get_tab_index(), ' cols="80" rows="10" id="description" name="description">', $t_description_textarea, '</textarea>';
+	echo '<textarea class="form-control" ', helper_get_tab_index(),
+		' cols="80" rows="10" id="description" name="description">', "\n",
+		$t_description_textarea, '</textarea>';
 	echo '</td></tr>';
 }
 
@@ -650,7 +651,9 @@ if( $t_show_steps_to_reproduce ) {
 	echo '<tr>';
 	echo '<th class="category"><label for="steps_to_reproduce">' . lang_get( 'steps_to_reproduce' ) . '</label></th>';
 	echo '<td colspan="5">';
-	echo '<textarea class="form-control" ', helper_get_tab_index(), ' cols="80" rows="10" id="steps_to_reproduce" name="steps_to_reproduce">', $t_steps_to_reproduce_textarea, '</textarea>';
+	echo '<textarea class="form-control" ', helper_get_tab_index(),
+		' cols="80" rows="10" id="steps_to_reproduce" name="steps_to_reproduce">', "\n",
+		$t_steps_to_reproduce_textarea, '</textarea>';
 	echo '</td></tr>';
 }
 
@@ -659,7 +662,9 @@ if( $t_show_additional_information ) {
 	echo '<tr>';
 	echo '<th class="category"><label for="additional_information">' . lang_get( 'additional_information' ) . '</label></th>';
 	echo '<td colspan="5">';
-	echo '<textarea class="form-control" ', helper_get_tab_index(), ' cols="80" rows="10" id="additional_information" name="additional_information">', $t_additional_information_textarea, '</textarea>';
+	echo '<textarea class="form-control" ', helper_get_tab_index(),
+		' cols="80" rows="10" id="additional_information" name="additional_information">', "\n",
+		$t_additional_information_textarea, '</textarea>';
 	echo '</td></tr>';
 }
 
@@ -686,7 +691,7 @@ foreach ( $t_related_custom_field_ids as $t_id ) {
 		echo '<tr>';
 		echo '<td class="category">';
 		echo '<label', $t_required_class, $t_label_for, '>';
-		echo '<span>', string_display( lang_get_defaulted( $t_def['name'] ) ), '</span>';
+		echo '<span>', string_display_line( lang_get_defaulted( $t_def['name'] ) ), '</span>';
 		echo '</label>';
 		echo '</td><td colspan="5">';
 		print_custom_field_input( $t_def, $t_bug_id, $t_def['require_update'] );

@@ -461,10 +461,12 @@ $g_enable_email_notification	= ON;
 $g_email_notifications_verbose = OFF;
 
 /**
- * The following two config options allow you to control who should get email
- * notifications on different actions/statuses.  The first option
- * (default_notify_flags) sets the default values for different user
- * categories.  The user categories are:
+ * Sets the default email notifications values for different user categories.
+ *
+ * In combination with *notify_flags* (see below), this config option controls
+ * who should get email notifications on different actions/statuses.
+ *
+ * The user categories are:
  *
  *      'reporter': the reporter of the bug
  *       'handler': the handler of the bug
@@ -492,18 +494,21 @@ $g_email_notifications_verbose = OFF;
  *        '<status>': eg: 'resolved', 'closed', 'feedback', 'acknowledged', etc.
  *                     this list corresponds to $g_status_enum_string
  *
- * If you wanted to have all developers get notified of new bugs you might add
- * the following lines to your config file:
+ * Examples:
+ * - If you wanted to have all developers get notified of new bugs you might
+ *   add the following lines to your config file:
  *
- * $g_notify_flags['new']['threshold_min'] = DEVELOPER;
- * $g_notify_flags['new']['threshold_max'] = DEVELOPER;
+ *   $g_notify_flags['new']['threshold_min'] = DEVELOPER;
+ *   $g_notify_flags['new']['threshold_max'] = DEVELOPER;
  *
- * You might want to do something similar so all managers are notified when a
- * bug is closed.  If you did not want reporters to be notified when a bug is
- * closed (only when it is resolved) you would use:
+ * - You might want to do something similar so all managers are notified when a
+ *   bug is closed.
+ * - If you did not want reporters to be notified when a bug is closed
+ *   (only when it is resolved) you would use:
  *
- * $g_notify_flags['closed']['reporter'] = OFF;
+ *   $g_notify_flags['closed']['reporter'] = OFF;
  *
+ * @see $g_notify_flags
  * @global array $g_default_notify_flags
  */
 
@@ -519,28 +524,30 @@ $g_default_notify_flags = array(
 );
 
 /**
- * We don't need to send these notifications on new bugs
- * (see above for info on this config option)
- * @todo (though I'm not sure they need to be turned off anymore
- *      - there just won't be anyone in those categories)
- *      I guess it serves as an example and a placeholder for this
- *      config option
+ * Sets notifications overrides for specific actions/statuses.
+ *
+ * See above for detailed information. As an example of how to use this config
+ * option, the default setting
+ * - disables bugnotes notifications on new bugs (not needed in this case)
+ * - disables all notifications for monitoring event, except explicit
+ * example of how to use this config option.
+
  * @see $g_default_notify_flags
  * @global array $g_notify_flags
  */
-$g_notify_flags['new'] = array(
-	'bugnotes' => OFF,
-	'monitor'  => OFF
-);
-
-$g_notify_flags['monitor'] = array(
-	'reporter'      => OFF,
-	'handler'       => OFF,
-	'monitor'       => OFF,
-	'bugnotes'      => OFF,
-	'explicit'      => ON,
-	'threshold_min' => NOBODY,
-	'threshold_max' => NOBODY
+$g_notify_flags = array(
+	'new' => array(
+		'bugnotes'      => OFF,
+	),
+	'monitor' => array(
+		'reporter'      => OFF,
+		'handler'       => OFF,
+		'monitor'       => OFF,
+		'bugnotes'      => OFF,
+		'explicit'      => ON,
+		'threshold_min' => NOBODY,
+		'threshold_max' => NOBODY,
+	),
 );
 
 /**
@@ -1411,8 +1418,8 @@ $g_default_bug_view_status = VS_PUBLIC;
  *
  * @global string $g_default_bug_description
  */
- $g_default_bug_description = '';
- 
+$g_default_bug_description = '';
+
 /**
  * Default value for steps to reproduce field.
  * @global string $g_default_bug_steps_to_reproduce
@@ -1584,16 +1591,14 @@ $g_default_email_on_reopened = ON;
 $g_default_email_on_bugnote = ON;
 
 /**
- * @todo Unused
  * @global integer $g_default_email_on_status
  */
-$g_default_email_on_status = 0;
+$g_default_email_on_status = OFF;
 
 /**
- * @todo Unused
  * @global integer $g_default_email_on_priority
  */
-$g_default_email_on_priority = 0;
+$g_default_email_on_priority = OFF;
 
 /**
  * 'any'
@@ -1893,7 +1898,7 @@ $g_dropzone_enabled = ON;
 $g_attachments_file_permissions = 0400;
 
 /**
- * Maximum file size that can be uploaded
+ * Maximum file size (bytes) that can be uploaded.
  * Also check your PHP settings (default is usually 2MBs)
  * @global integer $g_max_file_size
  */
@@ -2029,18 +2034,18 @@ $g_reauthentication_expiry = TOKEN_EXPIRY_AUTHENTICATED;
 
 
 /**
- * Specifies the LDAP or Active Directory server to connect to, and must be
- * provided as an URI
- * - Protocol is optional, can be one of ldap or ldaps, defaults to ldap
+ * Specifies the LDAP or Active Directory server to connect to.
+ *
+ * This must be a full LDAP URI (ldap[s]://hostname:port)
+ * - Protocol can be either ldap or ldaps (for SSL encryption). If omitted,
+ *   then an unencrypted connection will be established on port 389.
  * - Port number is optional, and defaults to 389. If this doesn't work, try
  *   using one of the following standard port numbers: 636 (ldaps); for Active
  *   Directory Global Catalog forest-wide search, use 3268 (ldap) or 3269 (ldaps)
  *
  * Examples of valid URI:
- *
  *   ldap.example.com
- *   ldap.example.com:3268
- *   ldap://ldap.example.com/
+ *   ldap://ldap.example.com
  *   ldaps://ldap.example.com:3269/
  *
  * @global string $g_ldap_server
@@ -2387,6 +2392,7 @@ $g_enable_product_build = OFF;
  *   - category_id
  *   - due_date
  *   - handler
+ *   - monitors
  *   - os
  *   - os_version
  *   - platform
@@ -2405,6 +2411,13 @@ $g_enable_product_build = OFF;
  * listed in this option. Fields not listed above cannot be shown on the bug
  * report page. Visibility of custom fields is handled via the Manage =>
  * Manage Custom Fields administrator page.
+ *
+ * Note that 'monitors' is not an actual field; adding it to the list will let
+ * authorized reporters select users to add to the issue's monitoring list.
+ * Monitors will only be notified of the submission if both their e-mail prefs
+ * and the flags allow it (i.e. `$g_notify_flags['new']['monitor'] = ON`).
+ * @see $g_monitor_add_others_bug_threshold
+ * @see $g_notify_flags
  *
  * This setting can be set on a per-project basis by using the
  * Manage => Manage Configuration administrator page.
@@ -2687,9 +2700,17 @@ $g_view_bug_threshold = VIEWER;
 $g_monitor_bug_threshold = REPORTER;
 
 /**
+ * Threshold needed to show the list of users monitoring a bug on the bug view pages.
+ * @global integer $g_show_monitor_list_threshold
+ */
+$g_show_monitor_list_threshold = DEVELOPER;
+
+/**
  * Access level needed to add other users to the list of users monitoring
  * a bug.
  * Look in the constant_inc.php file if you want to set a different value.
+ * This setting should not be lower than $g_show_monitor_list_threshold.
+ * @see $g_show_monitor_list_threshold
  * @global integer $g_monitor_add_others_bug_threshold
  */
 $g_monitor_add_others_bug_threshold = DEVELOPER;
@@ -2698,6 +2719,8 @@ $g_monitor_add_others_bug_threshold = DEVELOPER;
  * Access level needed to delete other users from the list of users
  * monitoring a bug.
  * Look in the constant_inc.php file if you want to set a different value.
+ * This setting should not be lower than $g_show_monitor_list_threshold.
+ * @see $g_show_monitor_list_threshold
  * @global integer $g_monitor_delete_others_bug_threshold
  */
 $g_monitor_delete_others_bug_threshold = DEVELOPER;
@@ -2898,12 +2921,6 @@ $g_set_view_status_threshold = REPORTER;
  * @global integer $g_change_view_status_threshold
  */
 $g_change_view_status_threshold = UPDATER;
-
-/**
- * Threshold needed to show the list of users monitoring a bug on the bug view pages.
- * @global integer $g_show_monitor_list_threshold
- */
-$g_show_monitor_list_threshold = DEVELOPER;
 
 /**
  * Threshold needed to be able to use stored queries
@@ -3107,11 +3124,12 @@ $g_bugnote_link_tag = '~';
  * this is the prefix to use when creating links to bug views from bug counts
  * (eg. on the main page and the summary page).
  * Default is a temporary filter
- * only change the filter this time - 'view_all_set.php?type=1&amp;temporary=y'
- * permanently change the filter - 'view_all_set.php?type=1';
+ * only change the filter this time - 'view_all_set.php?type=' . FILTER_ACTION_PARSE_NEW . '&amp;temporary=y'
+ * permanently change the filter - 'view_all_set.php?type=' . FILTER_ACTION_PARSE_NEW;
+ * (FILTER_ACTION_xxx constants are defined in core/constant_inc.php)
  * @global string $g_bug_count_hyperlink_prefix
  */
-$g_bug_count_hyperlink_prefix = 'view_all_set.php?type=1&amp;temporary=y';
+$g_bug_count_hyperlink_prefix = 'view_all_set.php?type=' . FILTER_ACTION_PARSE_NEW . '&amp;temporary=y';
 
 /**
  * The regular expression to use when validating new user login names
@@ -3125,15 +3143,6 @@ $g_bug_count_hyperlink_prefix = 'view_all_set.php?type=1&amp;temporary=y';
  * @global string $g_user_login_valid_regex
  */
 $g_user_login_valid_regex = '/^([a-z\d\-.+_ ]+(@[a-z\d\-.]+\.[a-z]{2,4})?)$/i';
-
-/**
- * Default user name prefix used to filter the list of users in
- * manage_user_page.php.  Change this to 'A' (or any other
- * letter) if you have a lot of users in the system and loading
- * the manage users page takes a long time.
- * @global string $g_default_manage_user_prefix
- */
-$g_default_manage_user_prefix = 'ALL';
 
 /**
  * Default tag prefix used to filter the list of tags in
@@ -3758,13 +3767,6 @@ $g_my_view_boxes = array(
 	'my_comments'   => '0'
 );
 
-/**
- * Toggle whether 'My View' boxes are shown in a fixed position (i.e. adjacent
- * boxes start at the same vertical position)
- * @global integer $g_my_view_boxes_fixed_position
- */
-$g_my_view_boxes_fixed_position = ON;
-
 
 #############
 # RSS Feeds #
@@ -4352,14 +4354,14 @@ $g_global_settings = array(
 	'hostname','html_valid_tags', 'html_valid_tags_single_line', 'default_language',
 	'language_auto_map', 'fallback_language', 'login_method', 'plugins_enabled',
 	'session_save_path', 'session_validation', 'show_detailed_errors', 'show_queries_count',
-	'stop_on_errors', 'version_suffix', 'debug_email',
+	'show_timer', 'show_memory_usage', 'stop_on_errors', 'version_suffix', 'debug_email',
 	'fileinfo_magic_db_file', 'css_include_file', 'css_rtl_include_file',
 	'file_type_icons', 'path', 'short_path', 'absolute_path', 'core_path',
 	'class_path','library_path', 'language_path', 'absolute_path_default_upload_folder',
 	'ldap_simulation_file_path', 'plugin_path', 'bottom_include_page', 'top_include_page',
 	'default_home_page', 'logout_redirect_page', 'manual_url', 'logo_url', 'wiki_engine_url',
 	'cdn_enabled', 'public_config_names', 'email_login_enabled', 'email_ensure_unique',
-	'impersonate_user_threshold', 'email_retry_in_days'
+	'impersonate_user_threshold', 'email_retry_in_days', 'neato_tool', 'dot_tool'
 );
 
 /**
@@ -4481,7 +4483,6 @@ $g_public_config_names = array(
 	'default_language',
 	'default_limit_view',
 	'default_manage_tag_prefix',
-	'default_manage_user_prefix',
 	'default_new_account_access_level',
 	'default_notify_flags',
 	'default_project_view_status',
@@ -4581,7 +4582,6 @@ $g_public_config_names = array(
 	'monitor_delete_others_bug_threshold',
 	'move_bug_threshold',
 	'my_view_boxes',
-	'my_view_boxes_fixed_position',
 	'my_view_bug_count',
 	'news_enabled',
 	'news_limit_method',

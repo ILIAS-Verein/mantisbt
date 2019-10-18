@@ -192,7 +192,6 @@ class ApiObjectFactory {
 			case ERROR_USER_CREATE_PASSWORD_MISMATCH:
 			case ERROR_USER_NAME_INVALID:
 			case ERROR_USER_DOES_NOT_HAVE_REQ_ACCESS:
-			case ERROR_USER_REAL_MATCH_USER:
 			case ERROR_USER_CHANGE_LAST_ADMIN:
 			case ERROR_USER_REAL_NAME_INVALID:
 			case ERROR_USER_EMAIL_NOT_UNIQUE:
@@ -228,6 +227,8 @@ class ApiObjectFactory {
 			case ERROR_COLUMNS_INVALID:
 			case ERROR_API_TOKEN_NAME_NOT_UNIQUE:
 			case ERROR_INVALID_FIELD_VALUE:
+			case ERROR_PROJECT_SUBPROJECT_DUPLICATE:
+			case ERROR_PROJECT_SUBPROJECT_NOT_FOUND:
 				return ApiObjectFactory::faultBadRequest( $p_exception->getMessage() );
 
 			case ERROR_BUG_NOT_FOUND:
@@ -286,6 +287,7 @@ class ApiObjectFactory {
 	/**
 	 * Convert a soap object to an array
 	 * @param stdClass|array $p_object Object.
+	 * @param boolean $p_recursive
 	 * @return array
 	 */
 	static function objectToArray( $p_object, $p_recursive = false ) {
@@ -355,7 +357,7 @@ class ApiObjectFactory {
 	 *
 	 * @param mixed $p_maybe_fault Object to check whether it is a SOAP/REST fault.
 	 * @return void
-	 * @throws LogacyApiFaultException
+	 * @throws LegacyApiFaultException
 	 */
 	static function throwIfFault( $p_maybe_fault ) {
 		if( ApiObjectFactory::isFault( $p_maybe_fault ) ) {
@@ -576,9 +578,10 @@ function mci_has_administrator_access( $p_user_id, $p_project_id = ALL_PROJECTS 
 /**
  * Given an object, return the project id
  * @param object $p_project Project Object.
- * @return integer project id
+ * @param integer|boolean $p_default The default value or false if the default should not be applied.
+ * @return null|integer project id
  */
-function mci_get_project_id( $p_project ) {
+function mci_get_project_id( $p_project, $p_default = ALL_PROJECTS ) {
 	if( is_object( $p_project ) ) {
 		$p_project = get_object_vars( $p_project );
 	}
@@ -586,9 +589,11 @@ function mci_get_project_id( $p_project ) {
 	if( isset( $p_project['id'] ) && (int)$p_project['id'] != 0 ) {
 		$t_project_id = (int)$p_project['id'];
 	} else if( isset( $p_project['name'] ) && !is_blank( $p_project['name'] ) ) {
-		$t_project_id = project_get_id_by_name( $p_project['name'] );
+		$t_project_id = project_get_id_by_name( $p_project['name'], $p_default );
+	} else if( $p_default === false ) {
+		$t_project_id = null;
 	} else {
-		$t_project_id = ALL_PROJECTS;
+		$t_project_id = $p_default;
 	}
 
 	return $t_project_id;
@@ -1187,7 +1192,9 @@ function error_get_stack_trace() {
 
 		#remove the call to this function from the stack trace
 		foreach( $t_stack as $t_frame ) {
-			$t_trace .= ( isset( $t_frame['file'] ) ? basename( $t_frame['file'] ) : 'UnknownFile' ) . ' L' . ( isset( $t_frame['line'] ) ? $t_frame['line'] : '?' ) . ' ' . ( isset( $t_frame['function'] ) ? $t_frame['function'] : 'UnknownFunction' );
+			$t_trace .= ( isset( $t_frame['file'] ) ? basename( $t_frame['file'] ) : 'UnknownFile' )
+				. ' L' . ( isset( $t_frame['line'] ) ? $t_frame['line'] : '?' )
+				. ' ' . ( isset( $t_frame['function'] ) ? $t_frame['function'] : 'UnknownFunction' );
 
 			$t_args = array();
 			if( isset( $t_frame['params'] ) && ( count( $t_frame['params'] ) > 0 ) ) {
@@ -1196,7 +1203,7 @@ function error_get_stack_trace() {
 					$t_args[] = error_build_parameter_string( $t_value );
 				}
 
-				$t_trace .= '(' . implode( $t_args, ', ' ) . ')';
+				$t_trace .= '(' . implode( ', ', $t_args ) . ')';
 			} else {
 				$t_trace .= '()';
 			}
@@ -1210,7 +1217,9 @@ function error_get_stack_trace() {
 		array_shift( $t_stack ); #remove the call to the error handler from the stack trace
 
 		foreach( $t_stack as $t_frame ) {
-			$t_trace .= ( isset( $t_frame['file'] ) ? basename( $t_frame['file'] ) : 'UnknownFile' ) . ' L' . ( isset( $t_frame['line'] ) ? $t_frame['line'] : '?' ) . ' ' . ( isset( $t_frame['function'] ) ? $t_frame['function'] : 'UnknownFunction' );
+			$t_trace .= ( isset( $t_frame['file'] ) ? basename( $t_frame['file'] ) : 'UnknownFile' )
+				. ' L' . ( isset( $t_frame['line'] ) ? $t_frame['line'] : '?' )
+				. ' ' . ( isset( $t_frame['function'] ) ? $t_frame['function'] : 'UnknownFunction' );
 
 			$t_args = array();
 			if( isset( $t_frame['args'] ) ) {
@@ -1218,7 +1227,7 @@ function error_get_stack_trace() {
 					$t_args[] = error_build_parameter_string( $t_value );
 				}
 
-				$t_trace .= '(' . implode( $t_args, ', ' ) . ')';
+				$t_trace .= '(' . implode( ', ', $t_args ) . ')';
 			} else {
 				$t_trace .= '()';
 			}

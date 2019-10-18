@@ -75,20 +75,20 @@ $g_cache_bug_tags = array();
 function tag_cache_rows( array $p_tag_ids ) {
 	global $g_cache_tags;
 
-	$t_ids_to_seach = array();
+	$t_ids_to_search = array();
 	foreach( $p_tag_ids as $t_id ) {
 		if( !isset( $g_cache_tags[(int)$t_id]) ) {
-			$t_ids_to_seach[(int)$t_id] = (int)$t_id;
+			$t_ids_to_search[(int)$t_id] = (int)$t_id;
 		}
 	}
-	if( empty( $t_ids_to_seach ) ) {
+	if( empty( $t_ids_to_search ) ) {
 		return;
 	}
 
 	db_param_push();
 	$t_sql_in_params = array();
 	$t_params = array();
-	foreach( $t_ids_to_seach as $t_id ) {
+	foreach( $t_ids_to_search as $t_id ) {
 		$t_sql_in_params[] = db_param();
 		$t_params[] = $t_id;
 	}
@@ -98,10 +98,10 @@ function tag_cache_rows( array $p_tag_ids ) {
 	while( $t_row = db_fetch_array( $t_result ) ) {
 		$c_id = (int)$t_row['id'];
 		$g_cache_tags[$c_id] = $t_row;
-		unset( $t_ids_to_seach[$c_id] );
+		unset( $t_ids_to_search[$c_id] );
 	}
 	# mark the non existent ids
-	foreach( $t_ids_to_seach as $t_id ) {
+	foreach( $t_ids_to_search as $t_id ) {
 		$g_cache_tags[$t_id] = false;
 	}
 }
@@ -116,20 +116,21 @@ function tag_cache_rows( array $p_tag_ids ) {
 function tag_cache_bug_tag_rows( array $p_bug_ids ) {
 	global $g_cache_bug_tags;
 
-	$t_ids_to_seach = array();
+	$t_ids_to_search = array();
 	foreach( $p_bug_ids as $t_id ) {
 		if( !isset( $g_cache_bug_tags[(int)$t_id]) ) {
-			$t_ids_to_seach[] = (int)$t_id;
+			$t_ids_to_search[] = (int)$t_id;
 		}
 	}
-	if( empty( $t_ids_to_seach ) ) {
+
+	if( empty( $t_ids_to_search ) ) {
 		return;
 	}
 
 	db_param_push();
 	$t_sql_in_params = array();
 	$t_params = array();
-	foreach( $t_ids_to_seach as $t_id ) {
+	foreach( $t_ids_to_search as $t_id ) {
 		$t_sql_in_params[] = db_param();
 		$t_params[] = $t_id;
 	}
@@ -223,6 +224,7 @@ function tag_is_unique( $p_name ) {
  */
 function tag_ensure_unique( $p_name ) {
 	if( !tag_is_unique( $p_name ) ) {
+		error_parameters( $p_name );
 		trigger_error( ERROR_TAG_DUPLICATE, ERROR );
 	}
 }
@@ -255,6 +257,7 @@ function tag_name_is_valid( $p_name, array &$p_matches, $p_prefix = '' ) {
 function tag_ensure_name_is_valid( $p_name ) {
 	$t_matches = array();
 	if( !tag_name_is_valid( $p_name, $t_matches ) ) {
+		error_parameters( $p_name );
 		trigger_error( ERROR_TAG_NAME_INVALID, ERROR );
 	}
 }
@@ -327,7 +330,7 @@ function tag_attach_many( $p_bug_id, $p_tag_string, $p_tag_id = 0 ) {
 	access_ensure_bug_level( config_get( 'tag_attach_threshold' ), $p_bug_id );
 
 	$t_tags = tag_parse_string( $p_tag_string );
-	$t_can_create = access_has_global_level( config_get( 'tag_create_threshold' ) );
+	$t_can_create = tag_can_create();
 
 	$t_tags_create = array();
 	$t_tags_attach = array();
@@ -481,6 +484,7 @@ function tag_get( $p_tag_id ) {
 
 /**
  * Get tag name by id.
+ * @param integer $p_tag_id The tag ID to retrieve from the database.
  * @return string tag name or empty string if not found.
  */
 function tag_get_name( $p_tag_id ) {
@@ -495,7 +499,7 @@ function tag_get_name( $p_tag_id ) {
 /**
  * Return a tag row for the given name.
  * @param string $p_name The tag name to retrieve from the database.
- * @return array|boolean Tag row
+ * @return array|false Tag row
  */
 function tag_get_by_name( $p_name ) {
 	db_param_push();
@@ -530,6 +534,26 @@ function tag_get_field( $p_tag_id, $p_field_name ) {
 }
 
 /**
+ * Can the specified user create a tag?
+ *
+ * @param integer $p_user_id The id of the user to check access rights for.
+ * @return bool true: can create, false: otherwise.
+ */
+function tag_can_create( $p_user_id = null ) {
+	return access_has_global_level( config_get( 'tag_create_threshold' ), $p_user_id );
+}
+
+/**
+ * Ensure specified user can create tags.
+ *
+ * @param integer $p_user_id The id of the user to check access rights for.
+ * @return void
+ */
+function tag_ensure_can_create( $p_user_id = null ) {
+	access_ensure_global_level( config_get( 'tag_create_threshold' ), $p_user_id );
+}
+
+/**
  * Create a tag with the given name, creator, and description.
  * Defaults to the currently logged in user, and a blank description.
  * @param string  $p_name        The tag name to create.
@@ -538,7 +562,7 @@ function tag_get_field( $p_tag_id, $p_field_name ) {
  * @return int Tag ID
  */
 function tag_create( $p_name, $p_user_id = null, $p_description = '' ) {
-	access_ensure_global_level( config_get( 'tag_create_threshold' ) );
+	tag_ensure_can_create( $p_user_id );
 
 	tag_ensure_name_is_valid( $p_name );
 	tag_ensure_unique( $p_name );

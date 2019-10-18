@@ -183,7 +183,7 @@ function print_successful_redirect( $p_redirect_to ) {
  * Print avatar image for the given user ID
  *
  * @param integer $p_user_id 		A user identifier.
- * @param string $p_class_prefix	CSS classs prefix.
+ * @param string $p_class_prefix	CSS class prefix.
  * @param integer $p_size    		Image pixel size.
  * @return void
  */
@@ -194,13 +194,18 @@ function print_avatar( $p_user_id, $p_class_prefix, $p_size = 80 ) {
 }
 
 /**
- * prints the name of the user given the id.  also makes it an email link.
+ * prints the name of the user given the id.
+ *
+ * By default, the username will become a hyperlink to View User page,
+ * but caller can decide to just print the username.
  *
  * @param integer $p_user_id A user identifier.
+ * @param boolean $p_link    Whether to add an html link (defaults to true)
+ *
  * @return void
  */
-function print_user( $p_user_id ) {
-	echo prepare_user_name( $p_user_id );
+function print_user( $p_user_id, $p_link = true ) {
+	echo prepare_user_name( $p_user_id, $p_link );
 }
 
 /**
@@ -215,17 +220,13 @@ function print_user_with_subject( $p_user_id, $p_bug_id ) {
 		return;
 	}
 
-	$t_username = user_get_username( $p_user_id );
-	$t_name = user_get_name( $p_user_id );
+	print_user( $p_user_id );
 
-	if( user_exists( $p_user_id ) && user_get_field( $p_user_id, 'enabled' ) ) {
+	if( user_exists( $p_user_id ) && user_is_enabled( $p_user_id ) ) {
 		$t_email = user_get_email( $p_user_id );
-		print_email_link_with_subject( $t_email, $t_username, $t_name, $p_bug_id );
-	} else {
-		$t_name = string_attribute( $t_name );
-		echo '<span style="text-decoration: line-through">';
-		echo '<a title="' . $t_name . '">' . $t_username . '</a>';
-		echo '</span>';
+
+		echo '&nbsp;';
+		print_email_link_with_subject( $t_email, '', '', $p_bug_id );
 	}
 }
 
@@ -353,7 +354,6 @@ function print_tag_attach_form( $p_bug_id, $p_string = '' ) {
 ?>
 	<form method="post" action="tag_attach.php" class="form-inline">
 	<?php echo form_security_field( 'tag_attach' )?>
-	<label class="inline small"><?php echo sprintf( lang_get( 'tag_separate_by' ), config_get( 'tag_separator' ) )?></label>
 	<input type="hidden" name="bug_id" value="<?php echo $p_bug_id?>" class="input-sm" />
 	<?php print_tag_input( $p_bug_id, $p_string ); ?>
 	<input type="submit" value="<?php echo lang_get( 'tag_attach' )?>" class="btn btn-primary btn-sm btn-white btn-round" />
@@ -370,6 +370,7 @@ function print_tag_attach_form( $p_bug_id, $p_string = '' ) {
  */
 function print_tag_input( $p_bug_id = 0, $p_string = '' ) {
 ?>
+	<label class="inline small"><?php printf( lang_get( 'tag_separate_by' ), config_get( 'tag_separator' ) )?></label>
 	<input type="hidden" id="tag_separator" value="<?php echo config_get( 'tag_separator' )?>" />
 	<input type="text" name="tag_string" id="tag_string" class="input-sm" size="40" value="<?php echo string_attribute( $p_string )?>" />
 	<select class="input-sm" <?php echo helper_get_tab_index()?> name="tag_select" id="tag_select" class="input-sm">
@@ -446,7 +447,7 @@ function print_news_item_option_list() {
 	$t_result = db_query( $t_query, ($t_global == true ? array() : array( $t_project_id ) ) );
 
 	while( $t_row = db_fetch_array( $t_result ) ) {
-		$t_headline = string_display( $t_row['headline'] );
+		$t_headline = string_display_line( $t_row['headline'] );
 		$t_announcement = $t_row['announcement'];
 		$t_view_state = $t_row['view_state'];
 		$t_id = $t_row['id'];
@@ -652,7 +653,7 @@ function print_subproject_option_list( $p_parent_id, $p_project_id = null, $p_fi
 		}
 
 		if( $p_trace ) {
-			$t_full_id = join( $p_parents, ';' ) . ';' . $t_id;
+			$t_full_id = implode( ';', $p_parents ) . ';' . $t_id;
 		} else {
 			$t_full_id = $t_id;
 		}
@@ -846,34 +847,36 @@ function print_os_build_option_list( $p_os_build, $p_user_id = null ) {
 }
 
 /**
- * Print the option list for versions
- * @param string  $p_version       The currently selected version.
- * @param integer $p_project_id    Project id, otherwise current project will be used.
- * @param integer $p_released      Null to get all, 1: only released, 0: only future versions.
+ * Print the option list for versions.
+ * All versions related for each project will be printed. Those include, for each
+ * project, the directly linked versions and the inherited versions if applicable.
+ *
+ * @param string              $p_version       The currently selected version.
+ * @param integer|array|null  $p_project_ids   A project id, or array of ids, or null to use current project.
+ * @param integer             $p_released      One of VERSION_ALL, VERSION_FUTURE or VERSION_RELEASED
+ *                                             to define which versions to include in the list (defaults to ALL).
  * @param boolean $p_leading_blank Allow selection of no version.
- * @param boolean $p_with_subs     Whether to include sub-projects.
+ *
  * @return void
  */
-function print_version_option_list( $p_version = '', $p_project_id = null, $p_released = null, $p_leading_blank = true, $p_with_subs = false ) {
-	if( null === $p_project_id ) {
-		$c_project_id = helper_get_current_project();
-	} else {
-		$c_project_id = (int)$p_project_id;
+function print_version_option_list( $p_version = '', $p_project_ids = null, $p_released = VERSION_ALL, $p_leading_blank = true ) {
+	if( null === $p_project_ids ) {
+		$p_project_ids = helper_get_current_project();
 	}
+	$t_project_ids = is_array( $p_project_ids ) ? $p_project_ids : array( $p_project_ids );
 
-	if( $p_with_subs ) {
-		$t_versions = version_get_all_rows_with_subs( $c_project_id, $p_released, null );
-	} else {
-		$t_versions = version_get_all_rows( $c_project_id, $p_released, null );
-	}
+	$t_versions = version_get_all_rows( $t_project_ids, $p_released, true );
 
 	# Ensure the selected version (if specified) is included in the list
 	# Note: Filter API specifies selected versions as an array
 	if( !is_array( $p_version ) ) {
 		if( !empty( $p_version ) ) {
-			$t_version_id = version_get_id( $p_version, $c_project_id );
-			if( $t_version_id !== false ) {
-				$t_versions[] = version_cache_row( $t_version_id );
+			foreach( $t_project_ids as $t_project_id ) {
+				$t_version_id = version_get_id( $p_version, $t_project_id );
+				if( $t_version_id !== false ) {
+					$t_versions[] = version_cache_row( $t_version_id );
+					break;
+				}
 			}
 		}
 	}
@@ -884,6 +887,8 @@ function print_version_option_list( $p_version = '', $p_project_id = null, $p_re
 
 	$t_listed = array();
 	$t_max_length = config_get( 'max_dropdown_length' );
+
+	$t_show_project_name = count( $t_project_ids ) > 1;
 
 	foreach( $t_versions as $t_version ) {
 		# If the current version is obsolete, and current version not equal to $p_version,
@@ -900,8 +905,7 @@ function print_version_option_list( $p_version = '', $p_project_id = null, $p_re
 			$t_listed[] = $t_version_version;
 			echo '<option value="' . $t_version_version . '"';
 			check_selected( $p_version, $t_version['version'] );
-
-			$t_version_string = string_attribute( prepare_version_string( $c_project_id, $t_version['id'] ) );
+			$t_version_string = string_attribute( prepare_version_string( $t_version['project_id'], $t_version['id'], $t_show_project_name ) );
 
 			echo '>', string_shorten( $t_version_string, $t_max_length ), '</option>';
 		}
@@ -1248,7 +1252,7 @@ function print_custom_field_projects_list( $p_field_id ) {
  * @return void
  */
 function print_plugin_priority_list( $p_priority ) {
-	if( $p_priority < 1 && $p_priority > 5 ) {
+	if( $p_priority < 1 || $p_priority > 5 ) {
 		echo '<option value="', $p_priority, '" selected="selected">', $p_priority, '</option>';
 	}
 
@@ -1340,7 +1344,7 @@ function print_view_bug_sort_link( $p_string, $p_sort_field, $p_sort, $p_dir, $p
 			$t_sort_field = rawurlencode( $p_sort_field );
 			$t_print_parameter = ( $p_columns_target == COLUMNS_TARGET_PRINT_PAGE ) ? '&print=1' : '';
 			$t_filter_parameter = filter_is_temporary( $g_filter ) ? filter_get_temporary_key_param( $g_filter ) . '&' : '';
-			print_link( 'view_all_set.php?' . $t_filter_parameter . 'sort_add=' . $t_sort_field . '&dir_add=' . $p_dir . '&type=2' . $t_print_parameter, $p_string );
+			print_link( 'view_all_set.php?' . $t_filter_parameter . 'sort_add=' . $t_sort_field . '&dir_add=' . $p_dir . '&type=' . FILTER_ACTION_PARSE_ADD . $t_print_parameter, $p_string );
 			break;
 		default:
 			echo $p_string;
@@ -1356,11 +1360,12 @@ function print_view_bug_sort_link( $p_string, $p_sort_field, $p_sort, $p_dir, $p
  * @param string  $p_sort_by       The field to sort by.
  * @param integer $p_hide_inactive Whether to hide inactive users.
  * @param integer $p_filter        The filter to use.
+ * @param string  $p_search        The search term to use.
  * @param integer $p_show_disabled Whether to show disabled users.
  * @param string  $p_class         The CSS class of the link.
  * @return void
  */
-function print_manage_user_sort_link( $p_page, $p_string, $p_field, $p_dir, $p_sort_by, $p_hide_inactive = 0, $p_filter = ALL, $p_show_disabled = 0, $p_class = '' ) {
+function print_manage_user_sort_link( $p_page, $p_string, $p_field, $p_dir, $p_sort_by, $p_hide_inactive = 0, $p_filter = ALL, $p_search, $p_show_disabled = 0, $p_class = '' ) {
 	if( $p_sort_by == $p_field ) {
 		# If this is the selected field flip the order
 		if( 'ASC' == $p_dir || ASCENDING == $p_dir ) {
@@ -1374,7 +1379,7 @@ function print_manage_user_sort_link( $p_page, $p_string, $p_field, $p_dir, $p_s
 	}
 
 	$t_field = rawurlencode( $p_field );
-	print_link( $p_page . '?sort=' . $t_field . '&dir=' . $t_dir . '&save=1&hideinactive=' . $p_hide_inactive . '&showdisabled=' . $p_show_disabled . '&filter=' . $p_filter,
+	print_link( $p_page . '?sort=' . $t_field . '&dir=' . $t_dir . '&save=1&hideinactive=' . $p_hide_inactive . '&showdisabled=' . $p_show_disabled . '&filter=' . $p_filter . '&search=' . $p_search,
         $p_string, false, $p_class );
 }
 
@@ -1448,8 +1453,15 @@ function print_form_button( $p_action_page, $p_label, array $p_args_to_post = nu
  * print brackets around a pre-prepared link (i.e. '<a href' html tag).
  * @param string $p_link The URL to link to.
  * @return void
+ * @deprecated 2.21.0
  */
 function print_bracket_link_prepared( $p_link ) {
+	error_parameters(
+		__FUNCTION__,
+		'print button functions or, in the context of an EVENT_MENU_ITEM hook, return link as associative array'
+	);
+	trigger_error( ERROR_DEPRECATED_SUPERSEDED, DEPRECATED );
+
 	echo '<span class="bracket-link">[&#160;' . $p_link . '&#160;]</span> ';
 }
 
@@ -1629,54 +1641,34 @@ function print_page_links( $p_page, $p_start, $p_end, $p_current, $p_temp_filter
  * @return void
  */
 function print_email_link( $p_email, $p_text ) {
-	echo get_email_link( $p_email, $p_text );
-}
-
-/**
- * return the mailto: href string link instead of printing it
- *
- * @param string $p_email Email Address.
- * @param string $p_text  Link text to display to user.
- * @return string
- */
-function get_email_link( $p_email, $p_text ) {
-	return prepare_email_link( $p_email, $p_text );
+	echo prepare_email_link( $p_email, $p_text );
 }
 
 /**
  * print a mailto: href link with subject
  *
- * @param string $p_email  Email Address.
- * @param string $p_text   Link text to display to user.
- * @param string $p_tooltip The tooltip to show.
- * @param string $p_bug_id The bug identifier.
+ * @param string  $p_email  Email Address.
+ * @param string  $p_text   Link text to display to user.
+ * @param string  $p_tooltip The tooltip to show.
+ * @param string  $p_bug_id The bug identifier.
+ * @param boolean $p_show_as_button If true, show link as button with envelope
+ *                                  icon, otherwise display a plain-text link.
  * @return void
  */
-function print_email_link_with_subject( $p_email, $p_text, $p_tooltip, $p_bug_id ) {
-	if( !is_blank( $p_tooltip ) && $p_tooltip != $p_text ) {
-		$t_tooltip = ' title="' . $p_tooltip . '"';
-	} else {
-		$t_tooltip = '';
-	}
-
+function print_email_link_with_subject( $p_email, $p_text, $p_tooltip, $p_bug_id, $p_show_as_button = true )
+{
+	global $g_project_override;
 	$t_bug = bug_get( $p_bug_id, true );
-	if( !access_has_project_level( config_get( 'show_user_email_threshold', null, null, $t_bug->project_id ), $t_bug->project_id ) ) {
-		echo $t_tooltip != '' ? '<a' . $t_tooltip . '>' . $p_text . '</a>' : $p_text;
-		return;
-	}
 
-	$t_subject = email_build_subject( $p_bug_id );
+	$g_project_override = $t_bug->project_id;
 
-	# If we apply string_url() to the whole mailto: link then the @
-	# gets turned into a %40 and you can't right click in browsers to
-	# do Copy Email Address.  If we don't apply string_url() to the
-	# subject text then an ampersand (for example) will truncate the text
-	$t_subject = string_url( $t_subject );
-	$t_email = string_url( $p_email );
-	$t_mailto = string_attribute( 'mailto:' . $t_email . '?subject=' . $t_subject );
-	$t_text = string_display( $p_text );
-
-	echo '<a href="' . $t_mailto . '"' . $t_tooltip . '>' . $t_text . '</a>';
+	echo prepare_email_link(
+			$p_email,
+			$p_text,
+			email_build_subject( $p_bug_id ),
+			$p_tooltip,
+			$p_show_as_button
+		);
 }
 
 /**
@@ -2076,8 +2068,9 @@ function print_max_filesize( $p_size, $p_divider = 1000, $p_unit = 'kb' ) {
  * @return void
  */
 function print_dropzone_form_data() {
+	//$t_max_file_size = ceil( file_get_max_file_size() / ( 1024*1024 ) );
 	echo 'data-force-fallback="' . ( config_get( 'dropzone_enabled' ) ? 'false' : 'true' ) . '"' . "\n";
-	echo "\t" . 'data-max-filesize="'. ceil( config_get( 'max_file_size' ) / (1000 * 1024) ) . '"' . "\n";
+	echo "\t" . 'data-max-filesize-bytes="'. file_get_max_file_size() . '"' . "\n";
 	$t_allowed_files = config_get( 'allowed_files' );
 	if ( !empty ( $t_allowed_files ) ) {
 		$t_allowed_files = '.' . implode ( ',.', explode ( ',', config_get( 'allowed_files' ) ) );
@@ -2095,7 +2088,30 @@ function print_dropzone_form_data() {
 	echo "\t" . 'data-remove-file-confirmation="' . htmlspecialchars( lang_get( 'dropzone_remove_file_confirmation' ) ) . '"' . "\n";
 	echo "\t" . 'data-max-files-exceeded="' . htmlspecialchars( lang_get( 'dropzone_max_files_exceeded' ) ) . '"' . "\n";
 	echo "\t" . 'data-dropzone-not-supported="' . htmlspecialchars( lang_get( 'dropzone_not_supported' ) ) . '"';
+	echo "\t" . 'data-dropzone_multiple_files_too_big="' . htmlspecialchars( lang_get( 'dropzone_multiple_files_too_big' ) ) . '"';
+}
 
+/**
+ * Populate a hidden div where its inner html will be used as preview template
+ * for dropzone attached files
+ * @return void
+ */
+function print_dropzone_template(){
+	?>
+	<div id="dropzone-preview-template" class="hidden">
+		<div class="dz-preview dz-file-preview">
+			<div class="dz-filename"><span data-dz-name></span></div>
+			<div><img data-dz-thumbnail /></div>
+			<div class="dz-size" data-dz-size></div>
+			<div class="progress progress-small progress-striped active">
+				<div class="progress-bar progress-bar-success" data-dz-uploadprogress></div>
+			</div>
+			<div class="dz-success-mark"><span></span></div>
+			<div class="dz-error-mark"><span></span></div>
+			<div class="dz-error-message"><span data-dz-errormessage></span></div>
+		</div>
+	</div>
+	<?php
 }
 
 /**
@@ -2114,4 +2130,18 @@ function print_button( $p_action_page, $p_label, array $p_args_to_post = null, $
 	error_parameters( __FUNCTION__, 'print_form_button' );
 	trigger_error( ERROR_DEPRECATED_SUPERSEDED, DEPRECATED );
 	print_form_button( $p_action_page, $p_label, $p_args_to_post, $p_security_token );
+}
+
+/**
+ * Generate an html option list for the given array
+ * @param array  $p_array        Array.
+ * @param string $p_filter_value The selected value.
+ * @return void
+ */
+function print_option_list_from_array( array $p_array, $p_filter_value ) {
+	foreach( $p_array as $t_key => $t_value ) {
+		echo '<option value="' . $t_key . '"';
+		check_selected( (string)$p_filter_value, (string)$t_key );
+		echo '>' . string_attribute( $t_value ) . '</option>' . "\n";
+	}
 }

@@ -18,12 +18,32 @@
  * @copyright Copyright 2002  MantisBT Team - mantisbt-dev@lists.sourceforge.net
  */
 
-require_once( __DIR__ . '/core/graph_api.php' );
-
 /**
  * Mantis Graph plugin
  */
 class MantisGraphPlugin extends MantisPlugin  {
+
+	/**
+	 * Chart JS
+	 * @see https://www.chartjs.org/ Home page
+	 * @see https://www.jsdelivr.com/package/npm/chart.js CDN
+	 */
+	const CHARTJS_VERSION = '2.8.0';
+	const CHARTJS_HASH = 'sha256-Uv9BNBucvCPipKQ2NS9wYpJmi8DTOEfTA/nH2aoJALw=';
+	const CHARTJSBUNDLE_HASH = 'sha256-xKeoJ50pzbUGkpQxDYHD7o7hxe0LaOGeguUidbq6vis=';
+
+	/**
+	 * ChartJS colorschemes plugin
+	 * @see https://nagix.github.io/chartjs-plugin-colorschemes/ Home page
+	 * @see https://www.jsdelivr.com/package/npm/chartjs-plugin-colorschemes CDN
+	 */
+	const CHARTJS_COLORSCHEMES_VERSION = '0.4.0';
+	const CHARTJS_COLORSCHEMES_HASH = 'sha256-Ctym065YsaugUvysT5nHayKynbiDGVpgNBqUePRAL+0=';
+
+	/**
+	 * CDN for Chart.JS libraries
+	 */
+	const CHARTJS_CDN = 'https://cdn.jsdelivr.net';
 
 	/**
 	 * A method that populates the plugin information and minimum requirements.
@@ -42,6 +62,16 @@ class MantisGraphPlugin extends MantisPlugin  {
 		$this->author = 'MantisBT Team';
 		$this->contact = 'mantisbt-dev@lists.sourceforge.net';
 		$this->url = 'http://www.mantisbt.org';
+	}
+
+	/**
+	 * Plugin initialization
+	 * @return void
+	 */
+	function init() {
+		plugin_require_api( 'core/graph_api.php' );
+		plugin_require_api( 'core/Period.php' );
+		require_api( 'summary_api.php' );
 	}
 
 	/**
@@ -70,8 +100,8 @@ class MantisGraphPlugin extends MantisPlugin  {
 	/**
 	 * Add the RESTful routes that are handled by this plugin.
 	 *
-	 * @param $p_event_name The event name
-	 * @param $p_event_args The event arguments
+	 * @param string $p_event_name The event name
+	 * @param array  $p_event_args The event arguments
 	 * @return void
 	 */
 	function routes( $p_event_name, $p_event_args ) {
@@ -100,7 +130,7 @@ class MantisGraphPlugin extends MantisPlugin  {
 	 */
 	function csp_headers() {
 		if( config_get_global( 'cdn_enabled' ) == ON ) {
-			http_csp_add( 'script-src', 'https://cdnjs.cloudflare.com' );
+			http_csp_add( 'script-src', self::CHARTJS_CDN );
 		}
 	}
 
@@ -113,7 +143,7 @@ class MantisGraphPlugin extends MantisPlugin  {
 			return array( '<a class="btn btn-sm btn-primary btn-white btn-round" href="' .
 				plugin_page( 'issues_trend_page.php' ) . '">' . plugin_lang_get( 'issue_trends_link' ) . '</a>', );
 		} else {
-			return '';
+			return array();
 		}
 	}
 
@@ -124,13 +154,28 @@ class MantisGraphPlugin extends MantisPlugin  {
 	function resources() {
 		if( current( explode( '/', gpc_get_string( 'page', '' ) ) ) === $this->basename ) {
 			if( config_get_global( 'cdn_enabled' ) == ON ) {
-				html_javascript_cdn_link('https://cdnjs.cloudflare.com/ajax/libs/Chart.js/' . CHARTJS_VERSION . '/Chart.min.js', CHARTJS_HASH);
-				html_javascript_cdn_link('https://cdnjs.cloudflare.com/ajax/libs/Chart.js/' . CHARTJS_VERSION . '/Chart.bundle.min.js', CHARTJSBUNDLE_HASH);
+				$t_cdn_url = self::CHARTJS_CDN . '/npm/%s@%s/dist/';
+
+				# Chart.js library
+				$t_link = sprintf( $t_cdn_url, 'chart.js', self::CHARTJS_VERSION );
+				html_javascript_cdn_link( $t_link . 'Chart.min.js', self::CHARTJS_HASH );
+				html_javascript_cdn_link( $t_link . 'Chart.bundle.min.js', self::CHARTJSBUNDLE_HASH );
+
+				# Chart.js color schemes plugin
+				$t_link = sprintf( $t_cdn_url, 'chartjs-plugin-colorschemes', self::CHARTJS_COLORSCHEMES_VERSION );
+				html_javascript_cdn_link( $t_link . 'chartjs-plugin-colorschemes.min.js', self::CHARTJS_COLORSCHEMES_HASH );
 			} else {
-				echo '<script src="' . plugin_file('chart-' . CHARTJS_VERSION . '.min.js') . '"></script>';
-				echo '<script src="' . plugin_file('chart.bundle-' . CHARTJS_VERSION . '.min.js') . '"></script>';
+				$t_scripts = array(
+					plugin_file( 'Chart-' . self::CHARTJS_VERSION . '.min.js' ),
+					plugin_file( 'Chart.bundle-' . self::CHARTJS_VERSION . '.min.js' ),
+					plugin_file( 'chartjs-plugin-colorschemes-' . self::CHARTJS_COLORSCHEMES_VERSION . '.min.js' ),
+				);
 			}
-			echo '<script src="' . plugin_file("MantisGraph.js") . '"></script>';
+
+			$t_scripts[] = plugin_file( "MantisGraph.js" );
+			foreach( $t_scripts as $t_script ) {
+				echo "\t", '<script src="' . $t_script . '"></script>', "\n";
+			}
 		}
 	}
 
@@ -139,16 +184,67 @@ class MantisGraphPlugin extends MantisPlugin  {
 	 * @return array
 	 */
 	function summary_submenu() {
-		return array(
-            '<a class="btn btn-sm btn-primary btn-white" href="' . helper_mantis_url( 'summary_page.php' ) . '"> <i class="fa fa-table"></i> ' . plugin_lang_get( 'synthesis_link' ) . '</a>',
-			'<a class="btn btn-sm btn-primary btn-white" href="' . plugin_page( 'developer_graph.php' ) . '"> <i class="fa fa-bar-chart"></i> ' . lang_get( 'by_developer' ) . '</a>',
-			'<a class="btn btn-sm btn-primary btn-white" href="' . plugin_page( 'reporter_graph.php' ) . '"> <i class="fa fa-bar-chart"></i> ' . lang_get( 'by_reporter' ) . '</a>',
-			'<a class="btn btn-sm btn-primary btn-white" href="' . plugin_page( 'status_graph.php' ) . '"> <i class="fa fa-bar-chart"></i> ' . plugin_lang_get( 'status_link' ) . '</a>',
-			'<a class="btn btn-sm btn-primary btn-white" href="' . plugin_page( 'resolution_graph.php' ) . '"> <i class="fa fa-bar-chart"></i> ' . plugin_lang_get( 'resolution_link' ) . '</a>',
-			'<a class="btn btn-sm btn-primary btn-white" href="' . plugin_page( 'priority_graph.php' ) . '"> <i class="fa fa-bar-chart"></i> ' . plugin_lang_get( 'priority_link' ) . '</a>',
-			'<a class="btn btn-sm btn-primary btn-white" href="' . plugin_page( 'severity_graph.php' ) . '"> <i class="fa fa-bar-chart"></i> ' . plugin_lang_get( 'severity_link' ) . '</a>',
-			'<a class="btn btn-sm btn-primary btn-white" href="' . plugin_page( 'category_graph.php' ) . '"> <i class="fa fa-bar-chart"></i> ' . plugin_lang_get( 'category_link' ) . '</a>',
-			'<a class="btn btn-sm btn-primary btn-white" href="' . plugin_page( 'issues_trend_graph.php' ) . '"> <i class="fa fa-bar-chart"></i> ' . plugin_lang_get( 'issue_trends_link' ) . '</a>',
-		);
+		$t_filter = summary_get_filter();
+		$t_filter_param = filter_get_temporary_key_param( $t_filter );
+		$t_param_page = explode( '/', gpc_get_string( 'page', '' ) );
+		$t_plugin_page_current = end( $t_param_page );
+
+		# Core should implement the automatic highlighting of active links, but that requires
+		# changing the format of the menu and submenu events.
+		# For now, it's responsability of the plugin to detect and render each link properly.
+		$t_menu_items = array();
+		$t_menu_items[] = array( 'icon' => 'fa-table', 'title' => plugin_lang_get( 'synthesis_link' ),
+			'url' => helper_url_combine( helper_mantis_url( 'summary_page.php' ), $t_filter_param ) );
+
+		$t_menu_items[] = array( 'icon' => 'fa-bar-chart', 'title' => lang_get( 'by_developer' ),
+			'url' => helper_url_combine( plugin_page( 'developer_graph.php' ), $t_filter_param ),
+			'plugin_page' => 'developer_graph.php' );
+
+		$t_menu_items[] = array( 'icon' => 'fa-bar-chart', 'title' => lang_get( 'by_reporter' ),
+			'url' => helper_url_combine( plugin_page( 'reporter_graph.php' ), $t_filter_param ),
+			'plugin_page' => 'reporter_graph.php' );
+
+		$t_menu_items[] = array( 'icon' => 'fa-bar-chart', 'title' => plugin_lang_get( 'status_link' ),
+			'url' => helper_url_combine( plugin_page( 'status_graph.php' ), $t_filter_param ),
+			'plugin_page' => 'status_graph.php' );
+
+		$t_menu_items[] = array( 'icon' => 'fa-bar-chart', 'title' => plugin_lang_get( 'resolution_link' ),
+			'url' => helper_url_combine( plugin_page( 'resolution_graph.php' ), $t_filter_param ),
+			'plugin_page' => 'resolution_graph.php' );
+
+		$t_menu_items[] = array( 'icon' => 'fa-bar-chart', 'title' => plugin_lang_get( 'priority_link' ),
+			'url' => helper_url_combine( plugin_page( 'priority_graph.php' ), $t_filter_param ),
+			'plugin_page' => 'priority_graph.php' );
+
+		$t_menu_items[] = array( 'icon' => 'fa-bar-chart', 'title' => plugin_lang_get( 'severity_link' ),
+			'url' => helper_url_combine( plugin_page( 'severity_graph.php' ), $t_filter_param ),
+			'plugin_page' => 'severity_graph.php' );
+
+		$t_menu_items[] = array( 'icon' => 'fa-bar-chart', 'title' => plugin_lang_get( 'category_link' ),
+			'url' => helper_url_combine( plugin_page( 'category_graph.php' ), $t_filter_param ),
+			'plugin_page' => 'category_graph.php' );
+
+		$t_menu_items[] = array( 'icon' => 'fa-bar-chart', 'title' => plugin_lang_get( 'issue_trends_link' ),
+			'url' => helper_url_combine( plugin_page( 'issues_trend_graph.php' ), $t_filter_param ),
+			'plugin_page' => 'issues_trend_graph.php' );
+
+		$t_html_links = array();
+		foreach( $t_menu_items as $t_item ) {
+			$t_class_active = '';
+			if( isset( $t_item['plugin_page'] ) )  {
+				if( $t_item['plugin_page'] == $t_plugin_page_current ) {
+					$t_class_active = ' active';
+				}
+			} else {
+				if( 'summary_page.php' == basename( $_SERVER['SCRIPT_NAME'] ) ) {
+					$t_class_active = ' active';
+				}
+			}
+			$t_html = '<a class="btn btn-sm btn-primary btn-white' . $t_class_active . '" href="' . $t_item['url'] . '">';
+			$t_html .= ' <i class="fa ' . $t_item['icon'] . '"></i> ';
+			$t_html .= $t_item['title'] . '</a>';
+			$t_html_links[] = $t_html;
+		}
+		return $t_html_links;
 	}
 }
