@@ -118,7 +118,7 @@ $( document ).ready(function() {
                   .change(customFieldProductVersionChange);
                 copy.find('option[value="n.a."]').remove();
 
-                $(selector_product_version).after("</br><label>Also in Version:</label> ");
+                $(selector_product_version).after("</br><label>Also in Version:</label></br>");
                 $(selector_product_version).parent().append(" ").append(copy);
             }
             if ($("input[name='" + name_also_in_version + "_presence']").length) {
@@ -142,6 +142,7 @@ $( document ).ready(function() {
                             if (first.val() == "") {
                                 first.remove();
                                 $(this).parent().find("label").remove();
+                                $(this).parent().find("br").remove();
                             } else {
                                 first.val("");
                             }
@@ -164,7 +165,7 @@ $( document ).ready(function() {
                           .change(customFieldProductVersionChange);
                         copy.find('option[value="n.a."]').remove();
 
-                        $(this).parent().append("</br><label>Also in Version:</label> ").append(copy);
+                        $(this).parent().append("</br><label>Also in Version:</label></br>").append(copy);
                     }
                 }
 
@@ -263,7 +264,7 @@ $( document ).ready(function() {
                   .change(customFieldFixedInVersionChange);
                 copy.find('option[value="n.a."]').remove();
 
-                $(selector_fixed_in_version).after("</br><label>Also fixed in Version:</label> ");
+                $(selector_fixed_in_version).after("</br><label>Also fixed in Version:</label></br>");
                 $(selector_fixed_in_version).parent().append(" ").append(copy);
             }
 
@@ -288,6 +289,7 @@ $( document ).ready(function() {
                             if (first.val() == "") {
                                 first.remove();
                                 $(this).parent().find("label").remove();
+                                $(this).parent().find("br").remove();
                             } else {
                                 first.val("");
                             }
@@ -310,7 +312,7 @@ $( document ).ready(function() {
                           .change(customFieldFixedInVersionChange);
                         copy.find('option[value="n.a."]').remove();
 
-                        $(this).parent().append("</br><label>Also fixed in Version:</label> ").append(
+                        $(this).parent().append("</br><label>Also fixed in Version:</label></br>").append(
                           copy);
                     }
                 }

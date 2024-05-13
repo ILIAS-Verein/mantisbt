@@ -10,7 +10,7 @@ class AdvancedVersionsPlugin extends MantisPlugin
 
     function register() {
 		$this->name = 'AdvancedVersions';    # Proper name of plugin
-		$this->description = 'Adding a major version filter.\nAdding Filter for further version fields.\nMaking field "Product Version" required.';    # Short description of the plugin
+		$this->description = 'Adding a major version filter. Adding Filter for further version fields. Making field "Product Version" required.';    # Short description of the plugin
 		$this->page = '';           # Default plugin page
 
 		$this->version = '1.0';     # Plugin version string
