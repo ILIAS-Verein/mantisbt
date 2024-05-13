@@ -100,7 +100,7 @@ $( document ).ready(function() {
                       .change(customFieldProductVersionChange);
                     copy.find('option[value="n.a."]').remove();
 
-                    $(selector_product_version).parent().append(copy);
+                    $(selector_product_version).parent().append(" ").append(copy);
                 });
             }
 
@@ -245,7 +245,7 @@ $( document ).ready(function() {
                       .change(customFieldFixedInVersionChange);
                     copy.find('option[value="n.a."]').remove();
 
-                    $(selector_fixed_in_version).parent().append(copy);
+                    $(selector_fixed_in_version).parent().append(" ").append(copy);
 
                 });
             }
