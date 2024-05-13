@@ -112,9 +112,9 @@ function string_no_break( $p_string ) {
  * @return string
  */
 function string_nl2br( $p_string, $p_wrap = 100 ) {
-	$t_output = '';
 	$t_pieces = preg_split( '/(<pre[^>]*>.*?<\/pre>)/is', $p_string, -1, PREG_SPLIT_DELIM_CAPTURE );
 	if( isset( $t_pieces[1] ) ) {
+		$t_output = '';
 		foreach( $t_pieces as $t_piece ) {
 			if( preg_match( '/(<pre[^>]*>.*?<\/pre>)/is', $t_piece ) ) {
 				$t_piece = preg_replace( '/<br[^>]*?>/', '', $t_piece );
@@ -144,8 +144,7 @@ function string_nl2br( $p_string, $p_wrap = 100 ) {
  * @return string
  */
 function string_display( $p_string ) {
-	$t_data = event_signal( 'EVENT_DISPLAY_TEXT', $p_string, true );
-	return $t_data;
+	return event_signal( 'EVENT_DISPLAY_TEXT', $p_string, true );
 }
 
 /**
@@ -154,8 +153,7 @@ function string_display( $p_string ) {
  * @return string
  */
 function string_display_line( $p_string ) {
-	$t_data = event_signal( 'EVENT_DISPLAY_TEXT', $p_string, false );
-	return $t_data;
+	return event_signal( 'EVENT_DISPLAY_TEXT', $p_string, false );
 }
 
 /**
@@ -165,8 +163,7 @@ function string_display_line( $p_string ) {
  * @return string
  */
 function string_display_links( $p_string ) {
-	$t_data = event_signal( 'EVENT_DISPLAY_FORMATTED', $p_string, true );
-	return $t_data;
+	return event_signal( 'EVENT_DISPLAY_FORMATTED', $p_string, true );
 }
 
 /**
@@ -176,8 +173,7 @@ function string_display_links( $p_string ) {
  * @return string
  */
 function string_display_line_links( $p_string ) {
-	$t_data = event_signal( 'EVENT_DISPLAY_FORMATTED', $p_string, false );
-	return $t_data;
+	return event_signal( 'EVENT_DISPLAY_FORMATTED', $p_string, false );
 }
 
 /**
@@ -298,7 +294,7 @@ function string_sanitize_url( $p_url, $p_return_absolute = false ) {
 		}
 
 		if( !empty( $t_clean_pairs ) ) {
-			$t_query = '?' . join( '&', $t_clean_pairs );
+			$t_query = '?' . implode( '&', $t_clean_pairs );
 		}
 	}
 
@@ -424,24 +420,32 @@ function string_process_bugnote_link( $p_string, $p_include_anchor = true, $p_de
 					if( bugnote_exists( $c_bugnote_id ) ) {
 						$t_bug_id = bugnote_get_field( $c_bugnote_id, 'bug_id' );
 						if( bug_exists( $t_bug_id ) ) {
-							$g_project_override = bug_get_field( $t_bug_id, 'project_id' );
-							if(   access_compare_level(
-										user_get_access_level( auth_get_current_user_id(),
-										bug_get_field( $t_bug_id, 'project_id' ) ),
-										config_get( 'private_bugnote_threshold' )
-								   )
-								|| bugnote_get_field( $c_bugnote_id, 'reporter_id' ) == auth_get_current_user_id()
-								|| bugnote_get_field( $c_bugnote_id, 'view_state' ) == VS_PUBLIC
-							) {
-								$g_project_override = null;
-								return $p_array[1] .
-									string_get_bugnote_view_link(
-										$t_bug_id,
-										$c_bugnote_id,
-										(boolean)$p_detail_info,
-										(boolean)$p_fqdn
-									);
+							$t_project_id = bug_get_field( $t_bug_id, 'project_id' );
+							$t_user_id = auth_get_current_user_id();
+
+							$g_project_override = $t_project_id;
+
+							$t_can_view_issue = access_has_bug_level( config_get( 'view_bug_threshold' ), $t_bug_id, $t_user_id );
+							if( $t_can_view_issue ) {
+								$t_can_view_note = access_compare_level(
+									user_get_access_level( $t_user_id, $t_project_id ),
+									config_get( 'private_bugnote_threshold' )
+									)
+									|| bugnote_get_field( $c_bugnote_id, 'reporter_id' ) == $t_user_id
+									|| bugnote_get_field( $c_bugnote_id, 'view_state' ) == VS_PUBLIC;
+
+								if( $t_can_view_note ) {
+									$g_project_override = null;
+									return $p_array[1] .
+										string_get_bugnote_view_link(
+											$t_bug_id,
+											$c_bugnote_id,
+											(boolean)$p_detail_info,
+											(boolean)$p_fqdn
+										);
+								}
 							}
+
 							$g_project_override = null;
 						}
 					}
@@ -480,7 +484,8 @@ function string_insert_hrefs( $p_string ) {
 	static $s_url_regex = null;
 	static $s_email_regex = null;
 
-	if( !config_get( 'html_make_links' ) ) {
+	$t_html_make_links = config_get( 'html_make_links' );
+	if( !$t_html_make_links ) {
 		return $p_string;
 	}
 
@@ -496,31 +501,29 @@ function string_insert_hrefs( $p_string ) {
 
 		# valid set of characters that may occur in url scheme. Note: - should be first (A-F != -AF).
 		$t_url_valid_chars       = '-_.,!~*\';\/?%^\\\\:@&={\|}+$#[:alnum:]\pL';
-		$t_url_chars             = "(?:${t_url_hex}|[${t_url_valid_chars}\(\)\[\]])";
-		$t_url_chars2            = "(?:${t_url_hex}|[${t_url_valid_chars}])";
-		$t_url_chars_in_brackets = "(?:${t_url_hex}|[${t_url_valid_chars}\(\)])";
-		$t_url_chars_in_parens   = "(?:${t_url_hex}|[${t_url_valid_chars}\[\]])";
+		$t_url_chars             = "(?:{$t_url_hex}|[{$t_url_valid_chars}\(\)\[\]])";
+		$t_url_chars2            = "(?:{$t_url_hex}|[{$t_url_valid_chars}])";
+		$t_url_chars_in_brackets = "(?:{$t_url_hex}|[{$t_url_valid_chars}\(\)])";
+		$t_url_chars_in_parens   = "(?:{$t_url_hex}|[{$t_url_valid_chars}\[\]])";
 
 		$t_url_part1 = $t_url_chars;
-		$t_url_part2 = "(?:\(${t_url_chars_in_parens}*\)|\[${t_url_chars_in_brackets}*\]|${t_url_chars2})";
+		$t_url_part2 = "(?:\({$t_url_chars_in_parens}*\)|\[{$t_url_chars_in_brackets}*\]|{$t_url_chars2})";
 
-		$s_url_regex = "/(${t_url_protocol}(${t_url_part1}*?${t_url_part2}+))/su";
+		$s_url_regex = "/({$t_url_protocol}({$t_url_part1}*?{$t_url_part2}+))/su";
 
 		# e-mail regex
 		$s_email_regex = substr_replace( email_regex_simple(), '(?:mailto:)?', 1, 0 );
 	}
 
+	# Set the link's target and type according to configuration
+	$t_link_attributes = helper_get_link_attributes( false );
+
 	# Find any URL in a string and replace it with a clickable link
 	$p_string = preg_replace_callback(
 		$s_url_regex,
-		function ( $p_match ) {
+		function ( $p_match ) use ( $t_link_attributes ) {
 			$t_url_href = 'href="' . rtrim( $p_match[1], '.' ) . '"';
-			if( config_get( 'html_make_links' ) == LINKS_NEW_WINDOW ) {
-				$t_url_target = ' target="_blank"';
-			} else {
-				$t_url_target = '';
-			}
-			return "<a ${t_url_href}${t_url_target}>${p_match[1]}</a>";
+			return "<a {$t_url_href}{$t_link_attributes}>{$p_match[1]}</a>";
 		},
 		$p_string
 	);
@@ -550,7 +553,7 @@ function string_insert_hrefs( $p_string ) {
 function string_process_exclude_anchors( $p_string, $p_callback ) {
 	static $s_anchor_regex = '/(<a[^>]*>.*?<\/a>)/is';
 
-	$t_pieces = preg_split( $s_anchor_regex, $p_string, null, PREG_SPLIT_DELIM_CAPTURE );
+	$t_pieces = preg_split( $s_anchor_regex, $p_string, -1, PREG_SPLIT_DELIM_CAPTURE );
 
 	$t_string = '';
 	foreach( $t_pieces as $t_piece ) {
@@ -615,9 +618,7 @@ function string_restore_valid_html_tags( $p_string, $p_multiline = true ) {
 
 	$p_string = preg_replace( '/&lt;(' . $t_tags . ')\s*&gt;/ui', '<\\1>', $p_string );
 	$p_string = preg_replace( '/&lt;\/(' . $t_tags . ')\s*&gt;/ui', '</\\1>', $p_string );
-	$p_string = preg_replace( '/&lt;(' . $t_tags . ')\s*\/&gt;/ui', '<\\1 />', $p_string );
-
-	return $p_string;
+	return preg_replace( '/&lt;(' . $t_tags . ')\s*\/&gt;/ui', '<\\1 />', $p_string );
 }
 
 /**
@@ -698,6 +699,10 @@ function string_get_bugnote_view_link( $p_bug_id, $p_bugnote_id, $p_detail_info 
 			$t_reporter = string_attribute( user_get_name( bugnote_get_field( $p_bugnote_id, 'reporter_id' ) ) );
 			$t_update_date = string_attribute( date( config_get( 'normal_date_format' ), ( bugnote_get_field( $p_bugnote_id, 'last_modified' ) ) ) );
 			$t_link .= ' title="' . bug_format_id( $t_bug_id ) . ': [' . $t_update_date . '] ' . $t_reporter . '"';
+		}
+
+		if( bug_is_resolved( $t_bug_id ) ) {
+			$t_link .= ' class="resolved"';
 		}
 
 		$t_link .= '>' . bug_format_id( $t_bug_id ) . ':' . bugnote_format_id( $p_bugnote_id ) . '</a>';
@@ -801,8 +806,7 @@ function string_get_bug_report_url() {
  * @return string
  */
 function string_get_confirm_hash_url( $p_user_id, $p_confirm_hash ) {
-	$t_path = config_get_global( 'path' );
-	return $t_path . 'verify.php?id=' . string_url( $p_user_id ) . '&confirm_hash=' . string_url( $p_confirm_hash );
+	return config_get_global( 'path' ) . 'verify.php?id=' . string_url( $p_user_id ) . '&confirm_hash=' . string_url( $p_confirm_hash );
 }
 
 /**
@@ -906,14 +910,10 @@ function string_html_entities( $p_string ) {
  * @return string
  */
 function string_html_specialchars( $p_string ) {
-	# Remove any invalid character from the string per XML 1.0 specification
-	# http://www.w3.org/TR/2008/REC-xml-20081126/#NT-Char
-	$p_string = preg_replace( '/[^\x9\xA\xD\x20-\x{D7FF}\x{E000}-\x{FFFD}\x{10000}-\x{10FFFF}]+/u', '', $p_string );
-
 	# achumakov: @ added to avoid warning output in unsupported codepages
 	# e.g. 8859-2, windows-1257, Korean, which are treated as 8859-1.
 	# This is VERY important for Eastern European, Baltic and Korean languages
-	return preg_replace( '/&amp;(#[0-9]+|[a-z]+);/i', '&$1;', @htmlspecialchars( $p_string, ENT_COMPAT, 'utf-8' ) );
+	return preg_replace( '/&amp;(#x?[0-9]+|[a-z]+);/i', '&$1;', @htmlspecialchars( $p_string, ENT_COMPAT, 'utf-8' ) );
 }
 
 /**
@@ -925,6 +925,31 @@ function string_prepare_header( $p_string ) {
 	$t_string= explode( "\n", $p_string, 2 );
 	$t_string= explode( "\r", $t_string[0], 2 );
 	return $t_string[0];
+}
+
+/**
+ * Truncate a string to the specified length, optionally appending a marker.
+ *
+ * This is similar to {@see mb_strimwidth()}, but working on the string's length
+ * (i.e. number of chars) instead of its width.
+ *
+ * @param string $p_string The string to truncate
+ * @param int $p_length    Number of chars to keep. If negative, remove this
+ *                         many chars from the end of the string.
+ * @param string $p_marker If set, the string's last chars are replaced by this
+ *                         to match the given length.
+ *
+ * @return string
+ */
+function string_truncate( $p_string, $p_length, $p_marker = '') {
+	$t_string_length = mb_strlen( $p_string );
+	$t_marker_length = mb_strlen( $p_marker );
+	$t_truncate_length = $p_length - $t_marker_length;
+	if( $t_string_length <= $t_truncate_length ) {
+		return $p_string;
+	}
+
+	return mb_substr( $p_string, 0, $t_truncate_length ) . $p_marker;
 }
 
 /**

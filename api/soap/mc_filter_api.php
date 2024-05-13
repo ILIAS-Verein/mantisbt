@@ -61,6 +61,12 @@ $g_soap_api_to_filter_names = array(
 	'end_day' => FILTER_PROPERTY_DATE_SUBMITTED_END_DAY,
 	'end_month' => FILTER_PROPERTY_DATE_SUBMITTED_END_MONTH,
 	'end_year' => FILTER_PROPERTY_DATE_SUBMITTED_END_YEAR,
+	'last_update_start_day' => FILTER_PROPERTY_LAST_UPDATED_START_DAY,
+	'last_update_start_month' => FILTER_PROPERTY_LAST_UPDATED_START_MONTH,
+	'last_update_start_year' => FILTER_PROPERTY_LAST_UPDATED_START_YEAR,
+	'last_update_end_day' => FILTER_PROPERTY_LAST_UPDATED_END_DAY,
+	'last_update_end_month' => FILTER_PROPERTY_LAST_UPDATED_END_MONTH,
+	'last_update_end_year' => FILTER_PROPERTY_LAST_UPDATED_END_YEAR,
 	'tag_string' => FILTER_PROPERTY_TAG_STRING,
 	'tag_select' => FILTER_PROPERTY_TAG_SELECT,
 );
@@ -158,9 +164,10 @@ function mci_filter_delete( $p_filter_id ) {
  *                               or standard filter (see FILTER_STANDARD_* constants).
  * @param integer $p_page_number Start with the given page number (zero-based).
  * @param integer $p_per_page    Number of issues to display per page.
+ * @param array|null $p_fields   The list of fields to retrieve for the issues, or null for all.
  * @return array that represents an IssueDataArray structure
  */
-function mc_filter_get_issues( $p_username, $p_password, $p_project_id, $p_filter_id, $p_page_number, $p_per_page ) {
+function mc_filter_get_issues( $p_username, $p_password, $p_project_id, $p_filter_id, $p_page_number, $p_per_page, $p_fields = null ) {
 	$t_user_id = mci_check_login( $p_username, $p_password );
 	if( $t_user_id === false ) {
 		return mci_fault_login_failed();
@@ -175,7 +182,7 @@ function mc_filter_get_issues( $p_username, $p_password, $p_project_id, $p_filte
 	if( is_numeric( $p_filter_id ) ) {
 		$t_filter = filter_get( $p_filter_id );
 	} else {
-		$t_filter = filter_standard_get( $p_filter_id, $t_user_id );
+		$t_filter = filter_standard_get( $p_filter_id, $t_user_id, $p_project_id );
 	}
 
 	if( $t_filter === null ) {
@@ -212,7 +219,7 @@ function mc_filter_get_issues( $p_username, $p_password, $p_project_id, $p_filte
 
 	$t_result = array();
 	foreach( $t_rows as $t_issue_data ) {
-		$t_result[] = mci_issue_data_as_array( $t_issue_data, $t_user_id, $t_lang );
+		$t_result[] = mci_issue_data_as_array( $t_issue_data, $t_user_id, $t_lang, $p_fields );
 	}
 
 	return $t_result;
@@ -340,6 +347,24 @@ function mci_filter_search_get_rows( $p_user_id, $p_filter_search, $p_page_numbe
 			$t_filter['custom_fields'][$t_custom_field_id] = $t_value;
 		}
 	}
+
+	// date fields
+	if( isset ( $t_filter[FILTER_PROPERTY_DATE_SUBMITTED_START_DAY] ) 
+		|| isset ( $t_filter[FILTER_PROPERTY_DATE_SUBMITTED_START_MONTH] ) 
+		|| isset ( $t_filter[FILTER_PROPERTY_DATE_SUBMITTED_START_YEAR] ) 
+		|| isset ( $t_filter[FILTER_PROPERTY_DATE_SUBMITTED_END_DAY] ) 
+		|| isset ( $t_filter[FILTER_PROPERTY_DATE_SUBMITTED_END_MONTH] ) 
+		|| isset ( $t_filter[FILTER_PROPERTY_DATE_SUBMITTED_END_YEAR] ) ) {
+		$t_filter[FILTER_PROPERTY_FILTER_BY_DATE_SUBMITTED] = 'on';
+	}
+	if( isset ( $t_filter[FILTER_PROPERTY_LAST_UPDATED_START_DAY] ) 
+		|| isset ( $t_filter[FILTER_PROPERTY_LAST_UPDATED_START_MONTH] ) 
+		|| isset ( $t_filter[FILTER_PROPERTY_LAST_UPDATED_START_YEAR] ) 
+		|| isset ( $t_filter[FILTER_PROPERTY_LAST_UPDATED_END_DAY] ) 
+		|| isset ( $t_filter[FILTER_PROPERTY_LAST_UPDATED_END_MONTH] ) 
+		|| isset ( $t_filter[FILTER_PROPERTY_LAST_UPDATED_END_YEAR] ) ) {
+		$t_filter[FILTER_PROPERTY_FILTER_BY_LAST_UPDATED_DATE] = 'on';
+}
 
 	$t_filter = filter_ensure_valid_filter( $t_filter );
 

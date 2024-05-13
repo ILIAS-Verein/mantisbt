@@ -112,14 +112,14 @@ $t_filter = filter_ensure_valid_filter( $t_filter );
 		<div class="widget-box widget-color-blue2">
 			<div class="widget-header widget-header-small">
 				<h4 class="widget-title lighter">
-					<i class="ace-icon fa fa-filter"></i>
+					<?php print_icon( 'fa-filter', 'ace-icon' ); ?>
 					<?php echo lang_get('filters') ?>
 				</h4>
 
 				<div class="widget-toolbar">
 					<div class="widget-menu">
 						<a href="#" data-action="settings" data-toggle="dropdown">
-							<i class="ace-icon fa fa-bars bigger-125"></i>
+							<?php print_icon( 'fa-bars', 'ace-icon bigger-125' ); ?>
 						</a>
 						<ul class="dropdown-menu dropdown-menu-right dropdown-yellow dropdown-caret dropdown-closer">
 							<?php
@@ -146,15 +146,6 @@ $t_filter = filter_ensure_valid_filter( $t_filter );
 
 					<div class="widget-toolbox padding-8 clearfix">
 						<div class="btn-toolbar pull-left">
-							<div class="form-inline">
-								<label><?php echo lang_get( 'search' ) ?>&nbsp;
-									<input type="text" id="filter-search-txt" class="input-sm" size="16"
-										   name="<?php echo FILTER_PROPERTY_SEARCH ?>"
-										   value="<?php echo string_attribute( $t_filter[FILTER_PROPERTY_SEARCH] ) ?>">
-								</label>
-							</div>
-						</div>
-						<div class="btn-toolbar pull-right">
 							<div class="form-inline">
 								<input type="submit" class="btn btn-primary btn-sm btn-white btn-round no-float" name="filter" value="<?php echo lang_get( 'use_query' )?>" />
 							</div>

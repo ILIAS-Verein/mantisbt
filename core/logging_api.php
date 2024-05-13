@@ -83,9 +83,15 @@ function log_event( $p_level, $p_msg ) {
 	$t_now = date( config_get_global( 'complete_date_format' ) );
 	$t_level = $g_log_levels[$p_level];
 
-	$t_plugin_event = '[' . $t_level . '] ' . $t_msg;
-	if( function_exists( 'event_signal' ) ) {
+	# Prevent recursion from plugins hooked on EVENT_LOG
+	static $s_event_log_called = false;
+	# Checking existence of event_signal function is required, because Logging
+	# API is loaded before Event API.
+	if( !$s_event_log_called && function_exists( 'event_signal' ) ) {
+		$t_plugin_event = '[' . $t_level . '] ' . $t_msg;
+		$s_event_log_called = true;
 		event_signal( 'EVENT_LOG', array( $t_plugin_event ) );
+		$s_event_log_called = false;
 	}
 
 	$t_log_destination = config_get_global( 'log_destination' );
@@ -106,28 +112,32 @@ function log_event( $p_level, $p_msg ) {
 		case 'none':
 			break;
 		case 'file':
-			error_log( $t_php_event . PHP_EOL, 3, $t_modifiers );
+			if( isset( $t_modifiers ) ) {
+				static $s_log_writable = null;
+
+				if( $s_log_writable ) {
+					error_log( $t_php_event . PHP_EOL, 3, $t_modifiers );
+				} elseif( $s_log_writable === null ) {
+					# Try to log the event, suppress errors in case the file is not writable
+					$s_log_writable = @error_log( $t_php_event . PHP_EOL, 3, $t_modifiers );
+
+					if( !$s_log_writable ) {
+						# Display a one-time warning message and write it to PHP system log as well.
+						# Note: to ensure the error is shown regardless of $g_display_error settings,
+						# we manually set the message and log it with error_log_delayed(), which will
+						# cause it to be displayed at page bottom.
+						error_parameters( $t_modifiers );
+						$t_message = error_string( ERROR_LOGFILE_NOT_WRITABLE );
+						error_log_delayed( $t_message );
+						error_log( 'MantisBT - ' . htmlspecialchars_decode( $t_message ) );
+					}
+				}
+			}
 			break;
 		case 'page':
 			global $g_log_events;
 			$g_log_events[] = array( time(), $p_level, $t_event, $t_caller);
 			break;
-		case 'firebug':
-			if( !class_exists( 'FirePHP' ) ) {
-				if( file_exists( config_get_global( 'library_path' ) . 'FirePHPCore/FirePHP.class.php' ) ) {
-					require_lib( 'FirePHPCore/FirePHP.class.php' );
-				}
-			}
-			if( class_exists( 'FirePHP' ) ) {
-				static $s_firephp;
-				if( $s_firephp === null ) {
-					$s_firephp = FirePHP::getInstance( true );
-				}
-				# Don't use $t_msg, let FirePHP format the message
-				$s_firephp->log( $p_msg, $t_now . ' ' . $t_level );
-				return;
-			}
-			# if firebug is not available, fall through
 		default:
 			# use default PHP error log settings
 			error_log( $t_php_event . PHP_EOL );
@@ -156,7 +166,7 @@ function log_print_to_page() {
 		$t_total_query_execution_time = 0;
 		$t_unique_queries = array();
 		$t_total_queries_count = 0;
-		$t_total_event_count = count( $g_log_events );
+		$t_total_event_count = $g_log_events === null ? 0 : count( $g_log_events );
 
 
 		echo "<div class=\"space-10\"></div>";
@@ -166,7 +176,7 @@ function log_print_to_page() {
 		echo "\t<div class=\"widget-box widget-color-red\">\n";
 		echo "\t<div class=\"widget-header widget-header-small\">\n";
 		echo "\t<h4 class=\"widget-title lighter\">\n";
-		echo "\t<i class=\"ace-icon fa fa-flag-o\"></i>\n";
+		echo "\t" . icon_get( 'fa-flag-o', 'ace-icon' ) . "\n";
 		echo "Debug Log";
 		echo "</h4>\n";
 		echo "</div>\n";
@@ -261,7 +271,7 @@ function log_print_to_page() {
 function log_get_caller( $p_level = null ) {
 	$t_full_backtrace = debug_backtrace();
 	$t_backtrace = $t_full_backtrace;
-	$t_root_path = dirname( dirname( __FILE__ ) ) . DIRECTORY_SEPARATOR;
+	$t_root_path = dirname( __FILE__, 2 ) . DIRECTORY_SEPARATOR;
 
 	# Remove top trace, as it's this function
 	unset( $t_backtrace[0] );

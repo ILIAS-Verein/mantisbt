@@ -69,6 +69,10 @@ $t_clone_info = array(
 
 if( $f_master_bug_id > 0 ) {
 	bug_ensure_exists( $f_master_bug_id );
+
+	# User can view the master bug
+	access_ensure_bug_level( config_get( 'view_bug_threshold' ), $f_master_bug_id );
+
 	if( bug_is_readonly( $f_master_bug_id ) ) {
 		error_parameters( $f_master_bug_id );
 		trigger_error( ERROR_BUG_READ_ONLY_ACTION_DENIED, ERROR );
@@ -102,7 +106,7 @@ $t_tags = tag_parse_string( $t_tag_string );
 if( !empty( $t_tags ) ) {
 	$t_issue['tags'] = array();
 	foreach( $t_tags as $t_tag ) {
-		$t_issue['tags'][] = array( 'id' => $t_tag['id'] );
+		$t_issue['tags'][] = array( 'name' => $t_tag['name'] );
 	}
 }
 
@@ -151,6 +155,16 @@ if( $t_handler_id != NO_USER ) {
 	$t_issue['handler'] = array( 'id' => $t_handler_id );
 }
 
+$t_monitors = gpc_get_int_array( 'monitors', array() );
+if( $t_monitors ) {
+	# The API expects a list of arrays with 'id' as key
+	$t_list = array();
+	foreach( $t_monitors as $t_monitor_id ) {
+		$t_list[] = array( 'id' => $t_monitor_id );
+	}
+	$t_issue['monitors'] = $t_list;
+}
+
 $t_view_state = gpc_get_int( 'view_state', 0 );
 if( $t_view_state != 0 ) {
 	$t_issue['view_state'] = array( 'id' => $t_view_state );
@@ -176,6 +190,10 @@ if( $t_priority != 0 ) {
 	$t_issue['priority'] = array( 'id' => $t_priority );
 }
 
+# @TODO decide what to do with projection field - see #27577
+# According to PHPDoc for $g_bug_report_page_fields, projection is not allowed
+# in the list; bug_report_page.php does not display it, so it does not really
+# make sense to process it here.
 $t_projection = gpc_get_int( 'projection', 0 );
 if( $t_projection != 0 ) {
 	$t_issue['projection'] = array( 'id' => $t_projection );
@@ -244,8 +262,6 @@ $t_issue_id = (int)$t_result['issue_id'];
 
 form_security_purge( 'bug_report' );
 
-layout_page_header_begin();
-
 if( $f_report_stay ) {
 	$t_fields = array(
 		'category_id', 'severity', 'reproducibility', 'profile_id', 'platform',
@@ -264,24 +280,7 @@ if( $f_report_stay ) {
 
 	$t_report_more_bugs_url = string_get_bug_report_url() . '?' . http_build_query( $t_data );
 
-	html_meta_redirect( $t_report_more_bugs_url );
+	print_header_redirect( $t_report_more_bugs_url );
 } else {
-	html_meta_redirect( 'view_all_bug_page.php' );
+	print_header_redirect_view( $t_issue_id );
 }
-
-layout_page_header_end();
-
-layout_page_begin( 'bug_report_page.php' );
-
-$t_buttons = array(
-	array( string_get_bug_view_url( $t_issue_id ), sprintf( lang_get( 'view_submitted_bug_link' ), $t_issue_id ) ),
-	array( 'view_all_bug_page.php', lang_get( 'view_bugs_link' ) ),
-);
-
-if( $f_report_stay ) {
-	$t_buttons[] = array( $t_report_more_bugs_url, lang_get( 'report_more_bugs' ) );
-}
-
-html_operation_confirmation( $t_buttons, '', CONFIRMATION_TYPE_SUCCESS );
-
-layout_page_end();

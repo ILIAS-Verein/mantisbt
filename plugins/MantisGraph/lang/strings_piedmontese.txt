@@ -25,7 +25,7 @@
  * **                                                                  **
  * **                      DO NOT UPDATE MANUALLY                      **
  * **                                                                  **
- * ** To improve a translation please visit http://translatewiki.net   **
+ * ** To improve a translation please visit https://translatewiki.net  **
  * ** Detailed instructions on how to create or update translations at **
  * ** http://www.mantisbt.org/wiki/doku.php/mantisbt:translationshowto **
  * **********************************************************************
@@ -33,7 +33,7 @@
 /** Piedmontese (Piemontèis)
  * 
  * See the qqq 'language' for message documentation incl. usage of parameters
- * To improve a translation please visit http://translatewiki.net
+ * To improve a translation please visit https://translatewiki.net
  *
  * @ingroup Language
  * @file
@@ -42,11 +42,10 @@
  * @author Dragonòt
  */
 
-$s_plugin_graph_title = 'Gràfich Mantis';
-$s_plugin_graph_description = 'Prèisa ëd gràfich ofissiaj.';
 $s_plugin_MantisGraph_title = 'Gràfich ëd Mantis';
+$s_plugin_MantisGraph_description = 'Prèisa ëd gràfich ofissiaj.';
 $s_plugin_MantisGraph_config = 'Configurassion';
-$s_plugin_MantisGraph_synthesis_link = 'Sìntesi';
+$s_plugin_MantisGraph_tab_label = 'Gràfich Mantis';
 $s_plugin_MantisGraph_status_link = 'Për stat';
 $s_plugin_MantisGraph_priority_link = 'Për priorità';
 $s_plugin_MantisGraph_severity_link = 'Për severità';

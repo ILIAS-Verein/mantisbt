@@ -39,19 +39,19 @@ require_api( 'logging_api.php' );
  * Allows building a query and fetching data, providing compatible functionality
  * for all supported databases. Hides the underlaying details from the ADOdb layer.
  *
- * Suports inline parameters with ":label" syntax, and anonymous parameters
+ * Supports inline parameters with ":label" syntax, and anonymous parameters
  * through the param() method.
  * Supports binding arrays which will be later expanded to individual parameters.
  *
  * The internal processing steps for query string are:
  * 1) $query_string: stores the user input string, containing parameter tokens for all
  *   supported formats:
- *     - ":{string}" For labeled parameters. Binded values are stored in $query_bind_array
- *     - "${int}" For anonymous parameters. Binded values are stored in $query_autobind_array
- *     - "${string}{int}" For special constructs, eg: $in0 for late binding IN caluses
+ *     - ":{string}" For labeled parameters. Bound values are stored in $query_bind_array
+ *     - "${int}" For anonymous parameters. Bound values are stored in $query_autobind_array
+ *     - "${string}{int}" For special constructs, eg: $in0 for late binding IN clauses
  * 2) $expanded_query_string: stores the query string after expansion of special constructs
  *   into standard "${int}" parameters
- * 3) $db_query_string: stores que query string after all paramaters have been renamed,
+ * 3) $db_query_string: stores the query string after all parameters have been renamed,
  *   reordered and converted to the specific database parameter syntax expected by ADOdb.
  *   Binded values are stored in $db_param_array
  *
@@ -107,7 +107,7 @@ class DbQuery {
 
 	/**
 	 * Array of values for parameters included in the final query string for ADOdb,
-	 * indexed as neede for the ADOdb driver
+	 * indexed as needed for the ADOdb driver
 	 * @var array
 	 */
 	protected $db_param_array;
@@ -196,10 +196,10 @@ class DbQuery {
 	}
 
 	/**
-	 * Creates a string containing a parameter that can be appended to que query string
+	 * Creates a string containing a parameter that can be appended to the query string
 	 * The provided value is binded to the parameter and stored for use at execution time
 	 * The parameters created by this method are anonymous parameters, so they can't be
-	 * accesed later to have values modified or rebinded.
+	 * accessed later to have values modified or rebinded.
 	 * The format of the token created is: "$n", where "n" is an incremental integer
 	 * @param mixed $p_value	Value to bind for this parameter
 	 * @return string			Token string
@@ -241,6 +241,12 @@ class DbQuery {
 	 * @return IteratorAggregate|boolean ADOdb result set or false if the query failed.
 	 */
 	public function execute( array $p_bind_array = null, $p_limit = null, $p_offset = null ) {
+		# For backwards compatibility with legacy code still relying on DB API,
+		# we need to save the parameters count before binding otherwise it will
+		# be reset after query execution, which will cause issues on RDBMS with
+		# numbered params (e.g. PostgreSQL).
+		db_param_push();
+
 		# bind values if provided
 		if( null !== $p_bind_array ) {
 			$this->bind_values( $p_bind_array );
@@ -251,7 +257,9 @@ class DbQuery {
 		$this->process_bind_params();
 		$this->process_sql_syntax();
 
-		return $this->db_execute( $p_limit, $p_offset );
+		$t_result = $this->db_execute($p_limit, $p_offset);
+		db_param_pop();
+		return $t_result;
 	}
 
 	/**
@@ -293,6 +301,7 @@ class DbQuery {
 			trigger_error( ERROR_DB_QUERY_FAILED, ERROR );
 			$this->db_result = false;
 		}
+		$this->current_row = null;
 		return $this->db_result;
 	}
 
@@ -390,6 +399,7 @@ class DbQuery {
 	 * to final ADOdb parameter syntax.
 	 * Will convert all labeled ":xxx", and anonymous "$n" parameters, and build
 	 * a values array suitable for ADOdb.
+	 * @param integer $p_counter_start
 	 * @return integer	Number of parameters created
 	 */
 	protected function process_bind_params( $p_counter_start = 0) {
@@ -493,7 +503,7 @@ class DbQuery {
 	}
 
 	/**
-	 * Process query string to expand late binding contructs for IN clauses
+	 * Process query string to expand late binding constructs for IN clauses
 	 * @return void
 	 */
 	protected function process_expand_params_in() {
@@ -542,7 +552,7 @@ class DbQuery {
 	 */
 	public function sql_in( $p_alias, $p_label_or_values ) {
 		if( is_array( $p_label_or_values ) ) {
-			if( count( $p_label_or_values ) > self::$oracle_in_limit ) {
+			if( db_is_oracle() && count( $p_label_or_values ) > self::$oracle_in_limit ) {
 				$t_sql = $this->helper_in_oracle_fix( $p_alias, $p_label_or_values );
 			} elseif( count( $p_label_or_values ) == 1 ) {
 				$t_sql = $p_alias . ' = ' . $this->param( reset( $p_label_or_values ) );
@@ -571,7 +581,7 @@ class DbQuery {
 
 		$t_query = $this->db_query_string;
 
-		# split the string by the relevant delimiters. The delimiters will be part of the splitted array
+		# split the string by the relevant delimiters. The delimiters will be part of the split array
 		$t_parts = preg_split("/(')|( AS )|(CAST\s*\()/mi", $t_query, -1, PREG_SPLIT_NO_EMPTY | PREG_SPLIT_DELIM_CAPTURE);
 		$t_is_literal = false;
 		$t_cast = 0;
@@ -847,7 +857,7 @@ class DbQuery {
 			$this->fetch();
 		}
 		if( is_numeric( $p_index_or_name ) ) {
-			if( count( $this->current_row ) > $p_index_or_name ) {
+			if( $this->current_row && count( $this->current_row ) > $p_index_or_name ) {
 				# get the element at that numerical position
 				$t_keys = array_keys( $this->current_row );
 				$t_value = $this->current_row[$t_keys[$p_index_or_name]];
@@ -881,8 +891,8 @@ class DbQuery {
 	 * @param string $p_escape		Escape character
 	 * @return string	Constructed string to be added to query
 	 */
-	public function sql_ilike( $p_alias, $p_value, $p_escape = null ) {
-		return $this->sql_like( $p_alias, $p_value, $p_escape, true );
+	public function sql_ilike( $p_alias, $p_pattern, $p_escape = null ) {
+		return $this->sql_like( $p_alias, $p_pattern, $p_escape, true );
 	}
 
 	/**
@@ -890,14 +900,14 @@ class DbQuery {
 	 * - alias: is the name of the column as a valid identifier in the final sql query
 	 * - value: is the string used as pattern for the like expression.
 	 * - escape: optionally, a character used as escape character in the pattern string
-	 * Optionally, the expresion can be forced to be case insensitive, otherwise the default
+	 * Optionally, the expression can be forced to be case insensitive, otherwise the default
 	 * behaviour from the database is used.
 	 *
 	 * The returned string would replace the sql part for: "alias LIKE 'xxx'"
 	 *
 	 * For portability reasons, the supported wildcards are '%' and '_'. Other special tokens
 	 * are automatically escaped:
-	 * - [] syntax in mssql are treated as literal charachters.
+	 * - [] syntax in mssql are treated as literal characters.
 	 * - \ as default escape char in mysql is treated as a literal character.
 	 * Note that the pattern string uses c-style escaping, so a "\" character must be written as "\\"
 	 *

@@ -57,7 +57,11 @@ require_api( 'project_api.php' );
 require_api( 'string_api.php' );
 require_api( 'utility_api.php' );
 
+require_css( 'status_config.php' );
+
 auth_ensure_user_authenticated();
+
+access_ensure_project_level( config_get( 'print_reports_threshold' ) );
 
 $f_search		= gpc_get_string( FILTER_PROPERTY_SEARCH, false ); # @todo need a better default
 $f_offset		= gpc_get_int( 'offset', 0 );
@@ -99,7 +103,7 @@ layout_page_header();
 
 <table class="table table-condensed no-margin"><tr><td class="bold bigger-120">
 	<div class="center">
-		<?php echo string_display( config_get( 'window_title' ) ) . ' - ' . string_display( project_get_name( $t_project_id ) ); ?>
+		<?php echo string_display_line( config_get( 'window_title' ) ) . ' - ' . string_display_line( project_get_name( $t_project_id ) ); ?>
 	</div>
 </td></tr></table>
 
@@ -159,8 +163,9 @@ $f_export = implode( ',', $f_bug_arr );
 			$t_params['filter'] = filter_get_temporary_key( $t_filter );
 		}
 
-		echo '<a href="' . $t_icon[0] . '.php?' . http_build_query( $t_params ) . '" ' . $t_icon[2] . '>'
-			. '<i class="fa ' . $t_icon[3] . '" title="' . $t_icon[4] . '"></i></a> ';
+		echo '<a href="' . $t_icon[0] . '.php?' . http_build_query( $t_params ) . '" ' . $t_icon[2] . '>';
+		print_icon( $t_icon[3], '', $t_icon[4] );
+		echo '</a> ';
 	}
 ?>
 

@@ -36,6 +36,18 @@ require_api( 'config_api.php' );
 
 check_print_section_header_row( 'Paths' );
 
+global $g_defaulted_path;
+const HOST_HEADER_INJECTION_URL = 'https://owasp.org/www-project-web-security-testing-guide/stable/4-Web_Application_Security_Testing/07-Input_Validation_Testing/17-Testing_for_Host_Header_Injection';
+check_print_test_warn_row(
+	'"path" is defined in config_inc.php.',
+	!$g_defaulted_path,
+	array( false =>
+		'Leaving it empty is a security risk, as the path will be set based on '
+		. 'headers from the HTTP request, exposing your system to '
+		. '<a href="' . HOST_HEADER_INJECTION_URL . '">Host Header Injection attacks</a>.'
+	)
+);
+
 $t_path_config_names = array(
 	'absolute_path',
 	'core_path',
@@ -162,8 +174,3 @@ foreach( $t_developer_directories as $t_developer_directory ) {
 		array( false => 'The ' . $t_developer_directory . ' directory within the MantisBT root is for development use and is not included in official releases of MantisBT.' )
 	);
 }
-
-check_print_test_warn_row(
-	'Directory <em><a href="' . htmlentities( config_get_global( 'short_path' ) ) . 'api">api</a></em> should be removed from the MantisBT root if you do not plan on using <a href="http://en.wikipedia.org/wiki/SOAP">SOAP</a>',
-	!is_dir( $t_paths['absolute_path']['config_value'] . 'api' )
-);

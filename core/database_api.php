@@ -37,10 +37,15 @@ require_api( 'error_api.php' );
 require_api( 'logging_api.php' );
 require_api( 'utility_api.php' );
 
+/**
+ * Main database connection.
+ * @var ADOConnection $g_db
+ */
+$g_db = false;
+
 # An array in which all executed queries are stored.  This is used for profiling
 # @global array $g_queries_array
 $g_queries_array = array();
-
 
 # Stores whether a database connection was successfully opened.
 # @global bool $g_db_connected
@@ -211,7 +216,7 @@ function db_check_database_support( $p_db_type ) {
 }
 
 /**
- * Maps a db driver type to the functional databse type
+ * Maps a db driver type to the functional database type
  * @param string	$p_driver_type Database driver name
  * @return int		Database type
  */
@@ -368,7 +373,7 @@ function db_affected_rows() {
 /**
  * Retrieve the next row returned from a specific database query
  * @param IteratorAggregate &$p_result Database Query Record Set to retrieve next result for.
- * @return array Database result
+ * @return array|false Database result or false if
  */
 function db_fetch_array( IteratorAggregate &$p_result ) {
 	global $g_db_functional_type;
@@ -451,32 +456,41 @@ function db_result( $p_result, $p_row_index = 0, $p_col_index = 0 ) {
 }
 
 /**
- * return the last inserted id for a specific database table
+ * Return the last inserted ID after a insert statement.
+ * Warning: this function must be used immediately after the insert statement
+ *
+ * This relies on ADOdb to get the entity id when this functionality is available
+ * for the specific driver, and it makes sense in our model.
+ * Natively supported:
+ * - mysqli, using: mysqli_insert_id(connection).
+ * - mssqlnative, using SCOPE_IDENTITY().
+ * Not natively supported:
+ * - pgsql, oracle, using the underlying sequence for the table.
+ *
+ * Since the table is needed for those drivers where a sequence is used, the
+ * $p_table parameter is mandatory to ensure portability.
+ * Warning: $p_table is not expected to be a different table than the one used
+ * for the previous insert. Note that it's not even used by some drivers.
+ *
  * @param string $p_table A valid database table name.
  * @param string $p_field A valid field name (default 'id').
  * @return integer last successful insert id
  */
-function db_insert_id( $p_table = null, $p_field = 'id' ) {
+function db_insert_id( $p_table, $p_field = 'id' ) {
 	global $g_db, $g_db_functional_type;
 
-	if( isset( $p_table ) ) {
-		switch( $g_db_functional_type ) {
+	switch( $g_db_functional_type ) {
 			case DB_TYPE_ORACLE:
 				$t_query = 'SELECT seq_' . $p_table . '.CURRVAL FROM DUAL';
 				break;
 			case DB_TYPE_PGSQL:
 				$t_query = 'SELECT currval(\'' . $p_table . '_' . $p_field . '_seq\')';
 				break;
-			case DB_TYPE_MSSQL:
-				$t_query = 'SELECT IDENT_CURRENT(\'' . $p_table . '\')';
-				break;
-		}
-		if( isset( $t_query ) ) {
-			$t_result = db_query( $t_query );
-			return (int)db_result( $t_result );
-		}
+			default:
+				return $g_db->Insert_ID();
 	}
-	return $g_db->Insert_ID();
+	$t_result = db_query( $t_query );
+	return (int)db_result( $t_result );
 }
 
 /**
@@ -611,33 +625,6 @@ function db_close() {
 	global $g_db;
 
 	$g_db->Close();
-}
-
-/**
- * prepare a string before DB insertion
- * @param string $p_string Unprepared string.
- * @return string prepared database query string
- * @deprecated db_query should be used in preference to this function. This function may be removed in 1.2.0 final
- */
-function db_prepare_string( $p_string ) {
-	global $g_db;
-	$t_db_type = config_get_global( 'db_type' );
-
-	switch( $t_db_type ) {
-		case 'mssqlnative':
-		case 'odbc_mssql':
-			return addslashes( $p_string );
-		case 'mysqli':
-			$t_escaped = $g_db->qstr( $p_string, false );
-			return mb_substr( $t_escaped, 1, mb_strlen( $t_escaped ) - 2 );
-		case 'pgsql':
-			return pg_escape_string( $p_string );
-		case 'oci8':
-			return $p_string;
-		default:
-			error_parameters( 'db_type', $t_db_type );
-			trigger_error( ERROR_CONFIG_OPT_INVALID, ERROR );
-	}
 }
 
 /**
@@ -982,7 +969,7 @@ function db_oracle_adapt_query_syntax( $p_query, array &$p_arr_parms = null ) {
 	#   To do so, we will assume that the "AS" following a "CAST", is safe to be kept.
 	#   Using a counter for "CAST" appearances to allow nesting: CAST(CAST(x AS y) AS z)
 
-	# split the string by the relevant delimiters. The delimiters will be part of the splitted array
+	# split the string by the relevant delimiters. The delimiters will be part of the split array
 	$t_parts = preg_split("/(')|( AS )|(CAST\s*\()/mi", $p_query, -1, PREG_SPLIT_NO_EMPTY | PREG_SPLIT_DELIM_CAPTURE);
 	$t_is_literal = false;
 	$t_cast = 0;
@@ -1158,9 +1145,11 @@ function db_oracle_adapt_query_syntax( $p_query, array &$p_arr_parms = null ) {
 }
 
 /**
- * Replace 4-byte UTF-8 chars
+ * Replace 4-byte UTF-8 chars.
+ *
  * This is a workaround to avoid data getting truncated on MySQL databases
- * using native utf8 encoding, which only supports 3 bytes chars (see #20431)
+ * using native utf8 encoding, which only supports 3 bytes chars (see #20431).
+ *
  * @param string $p_string
  * @return string
  */
@@ -1174,7 +1163,7 @@ function db_mysql_fix_utf8( $p_string ) {
 		# replace with U+FFFD to avoid potential Unicode XSS attacks,
 		# see http://unicode.org/reports/tr36/#Deletion_of_Noncharacters
 		"\xEF\xBF\xBD",
-		$p_string
+		(string)$p_string
 	);
 }
 
@@ -1253,4 +1242,56 @@ function db_format_query_log_msg( $p_query, array $p_arr_parms ) {
 		}
 	}
 	return $p_query;
+}
+
+/**
+ * Returns true if a specific capability is suported in the current database server,
+ * false otherwise.
+ *
+ * @param integer $p_capability   See DB_CAPABILITY_* constants
+ * @return boolean    True if the capability is supported, false otherwise.
+ */
+function db_has_capability( $p_capability ) {
+	static $s_cache = array();
+	if( !isset( $s_cache[$p_capability] ) ) {
+		$s_cache[$p_capability] = db_test_capability( $p_capability );
+	}
+	return $s_cache[$p_capability];
+}
+
+/**
+ * Tests if a specific capability is suported in the current database server.
+ *
+ * @param integer $p_capability   See DB_CAPABILITY_* constants
+ * @return boolean    True if the capability is supported, false otherwise.
+ */
+function db_test_capability( $p_capability ) {
+	global $g_db, $g_db_functional_type;
+	$t_server_info = $g_db->ServerInfo();
+
+	switch( $p_capability ) {
+		case DB_CAPABILITY_WINDOW_FUNCTIONS:
+			switch( $g_db_functional_type ) {
+				case DB_TYPE_ORACLE: # since 8i
+				case DB_TYPE_PGSQL: # since 8.4
+				case DB_TYPE_MSSQL: # since 2008
+					return true;
+				case DB_TYPE_MYSQL:
+					# mysql, since 8.0.2
+					if( version_compare( $t_server_info['version'], '8.0.2', '>=' )
+							&& false !== stripos( $t_server_info['description'], 'mysql' ) ) {
+						return true;
+					}
+					# mariaDB, since 10.2
+					if( version_compare( $t_server_info['version'], '10.2', '>=' )
+							&& false !== stripos( $t_server_info['description'], 'mariadb' ) ) {
+						return true;
+					}
+					# if server info cant provide enough information to identify the type,
+					# default to "not supported"
+			}
+	}
+
+	# if nothing was found, return false
+	return false;
 }
