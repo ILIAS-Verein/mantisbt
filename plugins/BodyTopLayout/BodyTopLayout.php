@@ -19,7 +19,8 @@ class BodyTopLayoutPlugin extends MantisPlugin {
 
     function hooks() {
         return array(
-            'EVENT_LAYOUT_CONTENT_BEGIN' => "show_info",
+		'EVENT_LAYOUT_CONTENT_BEGIN' => "show_info",
+		'EVENT_LAYOUT_PAGE_FOOTER' => 'footer',
         );
     }
 
@@ -29,6 +30,16 @@ class BodyTopLayoutPlugin extends MantisPlugin {
             <li style="padding-left: 10px; list-style-position: inside;"><a href="https://docu.ilias.de/go/pg/68562_16626" target="_blank">Hinweise zum Priorisieren von Bugreports</a> <span style="font-size:small;">(nur Institutionelle Vereinsmitglieder)</span></li>
             <li style="padding-left: 10px; padding-bottom: 5px;list-style-position: inside;"><span style="font-size:small;">Please report security issues to our security list </span><a href="mailto:security@ilias.de" target="_blank">security@ilias.de</a> </li>
         </div>';
+    }
+
+    function footer(){
+	    return '<div style="text-align:center; padding:10px;">
+		    <small>
+		     <a href="https://docu.ilias.de/ilias.php?baseClass=ilImprintGUI" target="_blank">Legal Notice</a> 
+                     <br />
+                     <a href="mailto:webmaster@ilias.de">Report Accessibility Issue</a>
+                    </small>
+              </div>';
     }
 
 }
