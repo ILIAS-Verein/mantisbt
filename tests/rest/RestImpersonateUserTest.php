@@ -23,7 +23,9 @@
  * @link http://www.mantisbt.org
  */
 
-require_once 'RestBase.php';
+namespace Mantis\tests\rest;
+
+use Mantis\tests\core\Faker;
 
 /**
  * Test fixture for user impersonation via API.
@@ -31,7 +33,7 @@ require_once 'RestBase.php';
  * @requires extension curl
  * @group REST
  */
-class RestImpersonateUserTests extends RestBase {
+class RestImpersonateUserTest extends RestBase {
 
 	/**
 	 * Test /users/me API without impersonation

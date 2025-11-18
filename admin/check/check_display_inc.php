@@ -33,6 +33,7 @@ if( !defined( 'CHECK_DISPLAY_INC_ALLOW' ) ) {
 # MantisBT Check API
 require_once( 'check_api.php' );
 require_api( 'config_api.php' );
+require_api( 'graphviz_api.php' );
 
 check_print_section_header_row( 'Display' );
 
@@ -66,3 +67,69 @@ check_print_test_row(
 	array( false => 'The value of the bugnote_link_tag option cannot be blank/null.' )
 );
 
+# Graphviz library
+if( config_get( 'relationship_graph_enable' ) ) {
+	# graphviz_path validity is checked in check_paths_inc.php
+	$t_graphviz_path = Graph::graphviz_path();
+
+	# Get list of Graphviz tools from the Graph class constants
+	$t_reflect_graph = new ReflectionClass( Graph::class );
+	$t_tools = array_filter( $t_reflect_graph->getConstants(),
+		function( $p_key ) {
+			return strpos( $p_key, 'TOOL_' ) === 0;
+		},
+		ARRAY_FILTER_USE_KEY
+	);
+
+	# Check each tool's availability
+	$t_extension = is_windows_server() ? '.exe' : '';
+	$t_unavailable = [];
+	$t_tool_version = null;
+	foreach( $t_tools as $t_tool ) {
+		$t_tool_path = $t_graphviz_path . $t_tool . $t_extension;
+		if( !is_executable( $t_tool_path ) ) {
+			$t_unavailable[] = $t_tool;
+		} elseif( !$t_tool_version ) {
+			$t_tool_proc = @proc_open( escapeshellarg( $t_tool_path ) . ' -V',
+				[ [ 'pipe', 'r' ], [ 'pipe', 'w' ], [ 'pipe', 'w' ] ],
+				$t_tool_pipes, null, null, [ 'bypass_shell' => true ] );
+			if( $t_tool_proc && preg_match( '/([\d\.]+)/',
+				stream_get_contents( $t_tool_pipes[2] ), $t_tool_matches ) ) {
+				$t_tool_version = $t_tool_matches[1] ;
+			}
+		}
+	}
+	check_print_test_row(
+		"Graphviz tools (" .implode( ', ', $t_tools )
+		. ") are required to display relationship graphs",
+		empty( $t_unavailable ),
+		[ false => implode( ', ', $t_unavailable )
+			. " not found in $t_graphviz_path or not executable. "
+		]
+	);
+	if( $t_tool_version ) {
+		check_print_info_row(
+			'Graphviz version',
+			htmlentities( $t_tool_version )
+		);
+		$t_graph_format = config_get_global( 'graph_format' );
+		$t_tool_min_version = '2.42.4';
+		if( version_compare( $t_tool_version, $t_tool_min_version ) >= 0 ) {
+			check_print_test_warn_row(
+				"Graph output format must be preferably set to SVG",
+				( $t_graph_format == 'svg' ),
+				[ false => "graph_format MantisBT option is not 'svg', "
+					. "supported since Graphviz $t_tool_min_version"
+				]
+			);
+		} else {
+			check_print_test_row(
+				"Graph output format must be supported by Graphviz",
+				( $t_graph_format != 'svg' ),
+				[ false  => "graph_format MantisBT option is 'svg', "
+					. "it requires Graphviz $t_tool_min_version or newer"
+				]
+			);
+		}
+	}
+}

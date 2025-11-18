@@ -23,19 +23,19 @@
  * @link http://www.mantisbt.org
  */
 
+namespace Mantis\tests\rest;
+
+use Mantis\tests\core\MantisTestCase;
+use Mantis\tests\core\RequestBuilder;
 use GuzzleHttp\Exception\GuzzleException;
-use PHPUnit\Framework\TestCase;
+use Psr\Http\Message\ResponseInterface;
+use stdClass;
 
 # Includes
-require_once dirname( __FILE__, 2 ) . '/TestConfig.php';
+require_once dirname( __DIR__ ) . '/TestConfig.php';
 
 # MantisBT Core API
 require_mantis_core();
-
-require_once( __DIR__ . '/../../vendor/autoload.php' );
-require_once ( __DIR__ . '/../../core/constant_inc.php' );
-require_once __DIR__ . '/../core/RequestBuilder.php';
-require_once __DIR__ . '/../core/Faker.php';
 
 /**
  * Base class for REST API test cases
@@ -43,11 +43,16 @@ require_once __DIR__ . '/../core/Faker.php';
  * @requires extension curl
  * @group REST
  */
-abstract class RestBase extends TestCase {
+abstract class RestBase extends MantisTestCase {
 	/**
 	 * @var string Base path for REST API
 	 */
 	protected $base_path = '';
+
+	/**
+	 * @var string Xdebug session value to enable, empty to disable debugging.
+	 */
+	protected $xdebug_session;
 
 	/**
 	 * @var string Username
@@ -72,7 +77,7 @@ abstract class RestBase extends TestCase {
 	/**
 	 * @var int User ID
 	 */
-	protected $userId = '1';
+	protected $userId = 1;
 
 	/**
 	 * @var int Project ID
@@ -111,6 +116,7 @@ abstract class RestBase extends TestCase {
 
 		if( array_key_exists( 'MANTIS_TESTSUITE_USERNAME', $GLOBALS ) ) {
 			$this->userName = $GLOBALS['MANTIS_TESTSUITE_USERNAME'];
+			$this->userId = user_get_id_by_name( $this->userName );
 		}
 
 		if( array_key_exists( 'MANTIS_TESTSUITE_PASSWORD', $GLOBALS ) ) {
@@ -122,6 +128,8 @@ abstract class RestBase extends TestCase {
 			"You must define 'MANTIS_TESTSUITE_API_TOKEN' in your bootstrap file" );
 
 		$this->token = $GLOBALS['MANTIS_TESTSUITE_API_TOKEN'];
+
+		$this->xdebug_session = $GLOBALS['MANTIS_TESTSUITE_XDEBUG_SESSION'] ?? '';
 
 		if( array_key_exists( 'MANTIS_TESTSUITE_PROJECT_ID', $GLOBALS ) ) {
 			$this->projectId = $GLOBALS['MANTIS_TESTSUITE_PROJECT_ID'];
@@ -161,7 +169,7 @@ abstract class RestBase extends TestCase {
 	 * @return RequestBuilder
 	 */
 	public function builder() {
-		return new RequestBuilder( $this->base_path, $this->token );
+		return new RequestBuilder( $this->base_path, $this->token, $this->xdebug_session );
 	}
 
 	/**
@@ -192,7 +200,7 @@ abstract class RestBase extends TestCase {
 	 * @return array
 	 */
 	protected function getIssueToAdd( $p_suffix = '' ) {
-		$t_summary = static::class . '::' . $this->getName();
+		$t_summary = $this->getTestName();
 		if( $p_suffix ) {
 			$t_summary .= '-' . $p_suffix;
 		}
@@ -205,6 +213,23 @@ abstract class RestBase extends TestCase {
 	}
 
 	/**
+	 * Checks that response was successful and returns JSON body as object.
+	 *
+	 * @param ResponseInterface $p_response
+	 * @param int               $p_status_code Expected HTTP status code
+	 *
+	 * @return stdClass
+	 */
+	protected function getJson( ResponseInterface $p_response, $p_status_code = HTTP_STATUS_SUCCESS ) {
+		$this->assertEquals( $p_status_code,
+			$p_response->getStatusCode(),
+			"REST API returned unexpected Status Code"
+		);
+		return json_decode( $p_response->getBody(), false );
+	}
+
+
+	/**
 	 * Marks a test as skipped if there is no configured Anonymous account.
 	 *
 	 * @return void
@@ -212,6 +237,17 @@ abstract class RestBase extends TestCase {
 	protected function skipTestIfAnonymousDisabled(){
 		if( ! auth_anonymous_enabled() ) {
 			$this->markTestSkipped( 'Anonymous access is not enabled' );
+		}
+	}
+
+	/**
+	 * Skip if time tracking is not enabled
+	 * @return void
+	 */
+	protected function skipIfTimeTrackingIsNotEnabled() {
+		$t_time_tracking_enabled = config_get( 'time_tracking_enabled' );
+		if( !$t_time_tracking_enabled ) {
+			$this->markTestSkipped( 'Time tracking is not enabled' );
 		}
 	}
 

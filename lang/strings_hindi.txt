@@ -40,12 +40,14 @@
  *
  * @author Ajaysajay
  * @author AnupamM
+ * @author Bunnypranav
  * @author Phoenix303
  * @author Prong$31
  * @author Saurmandal
  * @author Sfic
  * @author Shypoetess
  * @author Smtchahal
+ * @author संजीव कुमार
  */
 
 $s_actiongroup_menu_copy = 'प्रतिलिपि';
@@ -359,7 +361,7 @@ $s_amount = 'राशि';
 $s_total_owing = 'कुल देय';
 $s_total_paid = 'कुल भुगतान';
 $s_sponsor_hide = 'समाधान-प्राप्त और भुगतान-प्राप्त को छिपाएं';
-$s_sponsor_show = 'सभी दिखाएं';
+$s_sponsor_show = 'सभी दिखाएँ';
 $s_payment_updated = 'भुगतान का विवरण परिवर्धित कर दिया गया है।';
 $s_account_updated_msg = 'आपका खाता सफलतापूर्वक परिवर्धित कर दिया गया है...';
 $s_email_updated = 'ई-मेल पते को सफलतापूर्वक परिवर्तित कर दिया गया है';
@@ -486,12 +488,10 @@ $s_log_page_time = 'समयावधि';
 $s_log_page_caller = 'वार्ताकार';
 $s_log_page_event = 'घटना';
 $s_please_report = 'कृपया इसका प्रतिवेदन %1$s को भेजें।';
-$s_warning_plain_password_authentication = '<strong>चेतावनी:</strong> सादा कूटशब्द प्रमाणीकरण का उपयोग किया जाता है, इससे आपके कूटशब्द व्यवस्थापकों के सामने प्रकट हो जाएंगे।';
 $s_warning_default_administrator_account_present = '<strong>चेतावनी:</strong> आपको प्रचलित \'व्यवस्थापक\' खाते को अक्षम करना चाहिए या उसका कूटशब्द बदलना चाहिए।';
 $s_warning_admin_directory_present = '<strong>चेतावनी:</strong> "ऐड्मिन" निर्देशिका (admin directory) को हटा दिया जाना चाहिए, या उस तक पहुंच प्रतिबंधित कर दी जानी चाहिए।';
 $s_warning_change_setting = '<strong>चेतावनी:</strong> "%1$s" अपने प्रचलित मान (%2$s) पर नहीं है।';
 $s_warning_security_hazard = 'यह सुरक्षा के लिए संभावित खतरा है क्योंकि यह संवेदनशील विवरण को उजागर कर सकता है।';
-$s_warning_integrity_hazard = 'यह त्रुटियां होने पर मैन्टिस बी.टी. को जारी रखने का कारण बनेगा और सिस्टम/ डेटा संप्रभुता के मुद्दों को जन्म दे सकता है।';
 $s_warning_debug_email = '<strong>चेतावनी:</strong> "<code>debug_email</code>" <code>बंद</code> पर सेट नहीं है, सभी अधिसूचना ई-मेल "%1$s" पर भेजे जाएंगे।';
 $s_error_database_no_schema_version = '<strong>त्रुटि:</strong> आपका डेटाबेस स्कीमा संस्करण 0 है। ऐसा इसलिए हो सकता है क्योंकि डेटाबेस दूषित है या "डेटाबेस_वर्जन" का मान विन्यास तालिका से पुनर्प्राप्त नहीं किया जा सका या डेटाबेस संरचना मैन्टिस बी.टी. के पुराने संस्करण (पूर्व 1.0.0) से है।';
 $s_error_database_version_out_of_date_2 = '<strong>चेतावनी:</strong> डेटाबेस संरचना पुरानी हो सकती है। प्रवेश करने से पहले कृपया <a href="admin/install.php">यहां</a> परिवर्धित करें।';
@@ -747,9 +747,6 @@ $s_delete_user_button = 'प्रयोक्ता को मिटाएं';
 $s_impersonate_user_button = 'प्रयोक्ता का रूप-धारण करें';
 $s_reset_password_msg = '\'कूटशब्द पुनर्स्थापित करें\' ई-मेल के माध्यम से पुष्टिकरण \'यू आर एल\' भेजता है।';
 $s_reset_password_msg2 = 'कूटशब्द पुनर्स्थापन की प्रक्रिया में कूटशब्द को रिक्त किया जाता है।';
-$s_show_all_users = 'सभी';
-$s_users_unused = 'अप्रयुक्त';
-$s_users_new = 'नया';
 $s_account_reset_msg = 'चयनित उपयोगकर्ता के ई-मेल पते पर एक पुष्टिकरण अनुरोध भेजा गया है। इसके इस्तेमाल से उपयोगकर्ता अपना पासवर्ड बदल सकेगा।';
 $s_account_reset_msg2 = 'खाते का कूटशब्द को रिक्त कर दिया गया है...';
 $s_account_unlock_msg = 'खाता खोल दिया गया है।';
@@ -1135,10 +1132,6 @@ $s_tags = 'टैग';
 $s_tag_details = 'टैग विवरण: %1$s';
 $s_tag_id = 'टैग मूलांक';
 $s_tag_name = 'नाम';
-$s_tag_creator = 'निर्माता';
-$s_tag_created = 'बनाने की तिथि';
-$s_tag_updated = 'अन्तिम संशोधन';
-$s_tag_description = 'टैग विवरण';
 $s_tag_statistics = 'प्रयोग करने के आँकड़े';
 $s_tag_update = 'टैग बदलाव: %1$s';
 $s_tag_update_return = 'टैग पर वापस जाएं';
@@ -1161,9 +1154,8 @@ $s_tag_history_detached = 'टैग हटाया गया';
 $s_tag_history_renamed = 'टैग का नाम परिवर्तित हुआ।';
 $s_tag_related = 'संबंधित टैग';
 $s_tag_related_issues = 'साझे कार्यबिन्दु (%1$s)';
-$s_tag_stats_attached = 'कार्यबिन्दु संलग्न: %1$s';
+$s_tag_stats_attached = 'कार्यबिन्दु संलग्न';
 $s_tag_create = 'टैग बनाएं';
-$s_show_all_tags = 'सभी';
 $s_time_tracking_billing_link = 'समय का हिसाब';
 $s_time_tracking = 'समय का हिसाब';
 $s_time_tracking_time_spent = 'समय लगा:';
@@ -1237,7 +1229,7 @@ $MANTIS_ERROR[ERROR_REPORT] = 'आपके प्रतिवेदन मे�
 $MANTIS_ERROR[ERROR_NO_FILE_SPECIFIED] = 'कोई फ़ाइल नहीं बताई गई।';
 $MANTIS_ERROR[ERROR_FILE_DISALLOWED] = 'इस प्रकार की फ़ाइल की अनुमति नहीं है।';
 $MANTIS_ERROR[ERROR_DUPLICATE_PROJECT] = 'इस नाम की परियोजना पहले से मौजूद है।';
-$MANTIS_ERROR[ERROR_INVALID_FIELD_VALUE] = '\'%1$s\' के लिए अमान्य मान';
+$MANTIS_ERROR[ERROR_INVALID_FIELD_VALUE] = '"%1$s" के लिए अमान्य मान';
 $MANTIS_ERROR[ERROR_ACCESS_DENIED] = 'प्रवेश निषेध।';
 $MANTIS_ERROR[ERROR_BUGNOTE_NOT_FOUND] = 'टिप्पणी नहीं मिली.';
 $MANTIS_ERROR[ERROR_USER_BY_EMAIL_NOT_FOUND] = '"%1$s" ईमेल वाला उपयोगकर्ता नहीं मिला।';
@@ -1306,3 +1298,7 @@ $s_move = 'स्थानांतरण करें';
 $s_close = 'बंद करें';
 $s_add = 'जोड़ें';
 $s_login = 'प्रवेश';
+$s_filter_all = 'सभी';
+$s_filter_new = 'नया';
+$s_filter_unused_tags = 'अप्रयुक्त';
+$s_filter_unused = 'अप्रयुक्त';

@@ -23,15 +23,14 @@
  * @link http://www.mantisbt.org
  */
 
-# Includes
-require_once 'MantisCoreBase.php';
+namespace Mantis\tests\Mantis;
 
 /**
  * Helper API tests
  * @package Tests
  * @subpackage String
  */
-class MantisPluginTest extends MantisCoreBase {
+class PluginTest extends MantisCoreBase {
 
 	const MANTISCORE = 'MantisCore';
 
@@ -101,7 +100,7 @@ class MantisPluginTest extends MantisCoreBase {
 	 *
 	 * @return array List of test cases
 	 */
-	public function providerDependency() {
+	public static function providerDependency() {
 		return array(
 			array( '1.3.0', self::REQ_13, true ),
 			array( '1.3.0', self::REQ_130, true ),

@@ -23,6 +23,11 @@
  * @link http://www.mantisbt.org
  */
 
+namespace Mantis\tests\core;
+
+use GuzzleHttp\Client as GuzzleClient;
+use GuzzleHttp\Cookie\CookieJar;
+use Psr\Http\Message\ResponseInterface;
 
 /**
  * A builder class for test case requests.
@@ -59,12 +64,18 @@ class RequestBuilder {
 	private $headers;
 
 	/**
+	 * @var CookieJar|false Cookies for the Guzzle Client.
+	 */
+	private $cookieJar = false;
+
+	/**
 	 * Constructor
 	 *
 	 * @param string $p_base_url The API base URL
 	 * @param string $p_token    The authentication API token
+	 * @param string $p_xdebug   Xdebug session value to enable, empty to disable.
 	 */
-	public function __construct( $p_base_url, $p_token ) {
+	public function __construct( $p_base_url, $p_token, $p_xdebug ) {
 		$this->base_url = $p_base_url;
 		$this->token = $p_token;
 
@@ -72,6 +83,14 @@ class RequestBuilder {
 		$this->relative_path = '';
 		$this->body = '';
 		$this->headers = array();
+
+		# Set Xdebug session cookie
+		if( $p_xdebug ) {
+			$this->cookieJar = CookieJar::fromArray(
+				['XDEBUG_SESSION' => $p_xdebug],
+				parse_url( $p_base_url, PHP_URL_HOST )
+			);
+		}
 	}
 
 	/**
@@ -213,7 +232,7 @@ class RequestBuilder {
 	/**
 	 * Send the request
 	 *
-	 * @return Psr\Http\Message\ResponseInterface The response
+	 * @return ResponseInterface The response
 	 * @noinspection PhpDocMissingThrowsInspection
 	 */
 	public function send() {
@@ -241,7 +260,7 @@ class RequestBuilder {
 
 		$t_url = rtrim( $this->base_url, '/' ) . '/' . ltrim( $this->relative_path, '/' );
 
-		$t_client = new GuzzleHttp\Client();
+		$t_client = new GuzzleClient( ['cookies' => $this->cookieJar] );
 		/** @noinspection PhpUnhandledExceptionInspection */
 		return $t_client->request( $this->method, $t_url, $t_options );
 	}

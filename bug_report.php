@@ -52,6 +52,12 @@ require_api( 'print_api.php' );
 require_api( 'string_api.php' );
 require_api( 'utility_api.php' );
 
+# If we're processing an AJAX call from Dropzone, prevent output of HTML
+# in the content if errors occur, we just want a plain-text error message.
+if( 'XMLHttpRequest' == ( $_SERVER['HTTP_X_REQUESTED_WITH'] ?? '' ) ) {
+	define( 'DISABLE_INLINE_ERROR_REPORTING', 'text' );
+}
+
 form_security_validate( 'bug_report' );
 
 $f_master_bug_id = gpc_get_int( 'm_id', 0 );
@@ -278,7 +284,7 @@ if( $f_report_stay ) {
 	$t_data['product_version'] = $t_issue->version;
 	$t_data['report_stay'] = 1;
 
-	$t_report_more_bugs_url = string_get_bug_report_url() . '?' . http_build_query( $t_data );
+	$t_report_more_bugs_url = helper_url_combine( string_get_bug_report_url(), $t_data );
 
 	print_header_redirect( $t_report_more_bugs_url );
 } else {

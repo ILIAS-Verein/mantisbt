@@ -247,6 +247,46 @@ function print_email_input( $p_field_name, $p_email ) {
 }
 
 /**
+ * Prints a warning message indicating that the email address is not unique.
+ *
+ * Nothing is printed if the email address is unique.
+ *
+ * @param string $p_email   Email address to check
+ * @param int    $p_user_id User Id
+ *
+ * @return void
+ */
+function print_email_not_unique_warning( string $p_email, int $p_user_id ): void {
+	if( config_get_global( 'email_ensure_unique' )
+		&& !user_is_email_unique( $p_email, $p_user_id )
+	) {
+		echo '<div class="padding-8">';
+		print_icon( 'fa-exclamation-triangle', 'ace-icon bigger-125 red  padding-right-4' );
+		echo lang_get( 'email_not_unique' );
+		echo '</div>';
+	}
+}
+
+/**
+ * Prints a warning message if the user's email address is pending validation.
+ *
+ * @param int $p_user_id User Id
+ *
+ * @return void
+ */
+function print_email_pending_verification_warning( int $p_user_id ): void {
+	# Get pending email address from token
+	$t_email_change = token_get_value( TOKEN_ACCOUNT_CHANGE_EMAIL, $p_user_id );
+
+	if( $t_email_change ) {
+		echo '<div class="padding-8">';
+		print_icon('fa-info-circle', 'ace-icon bigger-125 blue padding-right-4' );
+		printf( lang_get( 'verify_email_pending' ), $t_email_change );
+		echo '</div>';
+	}
+}
+
+/**
  * print out an email editing input
  *
  * @param string $p_field_name Name of input tag.
@@ -687,13 +727,15 @@ function print_subproject_option_list( $p_parent_id, $p_project_id = null, $p_fi
 }
 
 /**
- * prints the profiles given the user id
- * @param integer $p_user_id   A user identifier.
- * @param integer $p_select_id ID to mark as selected; if 0, gets the user's default profile.
- * @param array   $p_profiles  Array of profiles.
+ * Prints the profiles given the user id.
+ *
+ * @param int        $p_user_id   A user identifier.
+ * @param int        $p_select_id ID to mark as selected; if 0, gets the user's default profile.
+ * @param array|null $p_profiles  Array of profiles.
+ *
  * @return void
  */
-function print_profile_option_list( $p_user_id, $p_select_id = 0, array $p_profiles = null ) {
+function print_profile_option_list( $p_user_id, $p_select_id = 0, ?array $p_profiles = null ) {
 	if( 0 == $p_select_id ) {
 		$p_select_id = profile_get_default( $p_user_id );
 	}
@@ -707,12 +749,12 @@ function print_profile_option_list( $p_user_id, $p_select_id = 0, array $p_profi
 
 /**
  * prints the profiles used in a certain project
- * @param integer $p_project_id A project identifier.
- * @param integer $p_select_id  ID to mark as selected; if 0, gets the user's default profile.
- * @param array   $p_profiles   Array of profiles.
+ * @param int        $p_project_id A project identifier.
+ * @param int        $p_select_id  ID to mark as selected; if 0, gets the user's default profile.
+ * @param array|null $p_profiles   Array of profiles.
  * @return void
  */
-function print_profile_option_list_for_project( $p_project_id, $p_select_id = 0, array $p_profiles = null ) {
+function print_profile_option_list_for_project( $p_project_id, $p_select_id = 0, ?array $p_profiles = null ) {
 	if( 0 == $p_select_id ) {
 		$p_select_id = profile_get_default( auth_get_current_user_id() );
 	}
@@ -749,22 +791,35 @@ function print_profile_option_list_from_profiles( array $p_profiles, $p_select_i
 }
 
 /**
+ * Print categories option list.
+ *
  * Since categories can be orphaned we need to grab all unique instances of category
  * We check in the project category table and in the bug table
- * We put them all in one array and make sure the entries are unique
+ * We put them all in one array and make sure the entries are unique.
  *
- * @param integer $p_category_id A category identifier.
- * @param integer $p_project_id  A project identifier.
+ * @param integer $p_category_id  A category identifier.
+ * @param null    $p_project_id   A project identifier.
+ * @param bool    $p_enabled_only True to exclude disabled categories.
+ *
  * @return void
  */
-function print_category_option_list( $p_category_id = 0, $p_project_id = null ) {
+function print_category_option_list( $p_category_id = 0, $p_project_id = null, $p_enabled_only = false ) {
 	if( null === $p_project_id ) {
 		$t_project_id = helper_get_current_project();
 	} else {
 		$t_project_id = $p_project_id;
 	}
 
-	$t_cat_arr = category_get_all_rows( $t_project_id, null, true );
+	$t_cat_arr = category_get_all_rows( $t_project_id, null, true, $p_enabled_only );
+
+	# Add the current category if it is not in the list
+	if( $p_category_id != 0
+        && !in_array( $p_category_id, array_column( $t_cat_arr, 'id' ) )
+    ) {
+		$t_category_row = category_get_row( $p_category_id );
+		$t_category_row['project_name'] = project_get_name( $t_category_row['project_id'] );
+		$t_cat_arr[] = $t_category_row;
+	}
 
 	if( config_get( 'allow_no_category' ) ) {
 		echo '<option value="0"';
@@ -773,27 +828,30 @@ function print_category_option_list( $p_category_id = 0, $p_project_id = null ) 
 		echo category_full_name( 0, false );
 		echo '</option>', PHP_EOL;
 	} else {
-		if( 0 == $p_category_id ) {
-			if( count( $t_cat_arr ) == 1 ) {
-				$p_category_id = (int) $t_cat_arr[0]['id'];
-			} else {
-				echo '<option value="" disabled hidden';
-				check_selected( $p_category_id, 0 );
-				echo '>';
-				echo string_attribute( lang_get( 'select_option' ) );
-				echo '</option>', PHP_EOL;
-			}
+		if( 0 == $p_category_id && count( $t_cat_arr ) == 1 ) {
+			# Single option are selected by default
+			$p_category_id = (int) $t_cat_arr[0]['id'];
 		}
+		echo '<option value="" disabled hidden';
+		check_selected( $p_category_id, 0 );
+		echo '>';
+		echo string_attribute( lang_get( 'select_option' ) );
+		echo '</option>', PHP_EOL;
 	}
 
 	foreach( $t_cat_arr as $t_category_row ) {
 		$t_category_id = (int)$t_category_row['id'];
+		$t_disabled = $t_category_row['status'] == CATEGORY_STATUS_DISABLED;
 		$t_category_name = category_full_name(
 			$t_category_id,
 			$t_category_row['project_id'] != $t_project_id
 		);
+		if( $t_disabled ) {
+//			$t_category_name .= ' [' . lang_get( 'disabled' ) . ']';
+		}
 		echo '<option value="' . $t_category_id . '"';
 		check_selected( $p_category_id, $t_category_id );
+		check_disabled( $t_disabled );
 		echo '>';
 		echo string_attribute( $t_category_name ), '</option>', PHP_EOL;
 	}
@@ -876,7 +934,7 @@ function print_os_build_option_list( $p_os_build, $p_user_id = null ) {
  *
  * @param string              $p_version       The currently selected version.
  * @param integer|array|null  $p_project_ids   A project id, or array of ids, or null to use current project.
- * @param integer             $p_released      One of VERSION_ALL, VERSION_FUTURE or VERSION_RELEASED
+ * @param bool|null           $p_released      One of VERSION_ALL, VERSION_FUTURE or VERSION_RELEASED
  *                                             to define which versions to include in the list (defaults to ALL).
  * @param boolean $p_leading_blank Allow selection of no version.
  *
@@ -905,7 +963,7 @@ function print_version_option_list( $p_version = '', $p_project_ids = null, $p_r
 	}
 
 	if( $p_leading_blank ) {
-		echo '<option value=""></option>';
+		echo '<option value="">&nbsp;</option>';
 	}
 
 	$t_listed = array();
@@ -1151,10 +1209,12 @@ function print_font_option_list( $p_font ) {
 /**
  * Print a dropdown list of all bug actions available to a user for a specified
  * set of projects.
+ *
  * @param array $p_project_ids An array containing one or more project IDs.
+ *
  * @return void
  */
-function print_all_bug_action_option_list( array $p_project_ids = null ) {
+function print_all_bug_action_option_list( array $p_project_ids = [] ) {
 	$t_commands = bug_group_action_get_commands( $p_project_ids );
 	foreach ( $t_commands as $t_action_id => $t_action_label) {
 		echo '<option value="' . $t_action_id . '">' . $t_action_label . '</option>';
@@ -1311,19 +1371,26 @@ function print_formatted_severity_string( BugData $p_bug ) {
 }
 
 /**
- * Print view bug sort link
- * @todo params should be in same order as print_manage_user_sort_link
- * @param string  $p_string         The displayed text of the link.
- * @param string  $p_sort_field     The field to sort.
- * @param string  $p_sort           The field to sort by.
- * @param string  $p_dir            The sort direction - either ASC or DESC.
- * @param integer $p_columns_target See COLUMNS_TARGET_* in constant_inc.php.
+ * Print view bug sort link.
+ *
+ * Prints the column header as a link allowing to change the sort order.
+ *
+ * @param string $p_label          The displayed text of the link.
+ * @param string $p_sort_field     The field to sort.
+ * @param string $p_sort           The field to sort by.
+ * @param string $p_dir            The sort direction - either ASC or DESC.
+ * @param int    $p_columns_target See COLUMNS_TARGET_* in constant_inc.php.
+ * @param string $p_icon           Optional Fontawesome icon to display instead of text.
+ *                                 If is set, $p_label will be used as the icon's title attribute.
+ *
  * @return void
+ *
+ * @todo params should be in same order as print_manage_user_sort_link
  */
-function print_view_bug_sort_link( $p_string, $p_sort_field, $p_sort, $p_dir, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
+function print_view_bug_sort_link( $p_label, $p_sort_field, $p_sort, $p_dir, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE, $p_icon = '' ) {
 	# @TODO cproensa, $g_filter is needed to get the temporary id, since the
-	# actual filter is not providede as parameter. Ideally, we should not
-	# rely in this global variable, but at the moment is not possible without
+	# actual filter is not provided as parameter. Ideally, we should not
+	# rely on this global variable, but at the moment is not possible without
 	# a rewrite of these print functions.
 	global $g_filter;
 
@@ -1341,18 +1408,22 @@ function print_view_bug_sort_link( $p_string, $p_sort_field, $p_sort, $p_dir, $p
 				# Otherwise always start with ascending
 				$p_dir = 'ASC';
 			}
-			$t_sort_field = rawurlencode( $p_sort_field );
-			$t_print_parameter = ( $p_columns_target == COLUMNS_TARGET_PRINT_PAGE ) ? '&print=1' : '';
-			$t_filter_parameter = filter_is_temporary( $g_filter ) ? filter_get_temporary_key_param( $g_filter ) . '&' : '';
-			$t_url = 'view_all_set.php?' . $t_filter_parameter
-				. 'sort_add=' . $t_sort_field
-				. '&dir_add=' . $p_dir
-				. '&type=' . FILTER_ACTION_PARSE_ADD
-				. $t_print_parameter;
-			print_link( $t_url, $p_string );
+			$t_params = [
+				'sort_add' => $p_sort_field,
+				'dir_add' => $p_dir,
+				'type' => FILTER_ACTION_PARSE_ADD
+			];
+			if( $p_columns_target == COLUMNS_TARGET_PRINT_PAGE ) {
+				$t_params['print'] = 1;
+			}
+			$t_url = helper_url_combine( 'view_all_set.php', $t_params );
+			if( filter_is_temporary( $g_filter ) ) {
+				$t_url .= '&' . filter_get_temporary_key_param( $g_filter );
+			}
+			print_link( $t_url, $p_label, false, '', $p_icon );
 			break;
 		default:
-			echo $p_string;
+			echo $p_label;
 	}
 }
 
@@ -1383,10 +1454,16 @@ function print_manage_user_sort_link( $p_page, $p_string, $p_field, $p_dir, $p_s
 		$t_dir = 'ASC';
 	}
 
-	$t_field = rawurlencode( $p_field );
 	print_link(
-		$p_page . '?sort=' . $t_field . '&dir=' . $t_dir . '&save=1&hideinactive=' . $p_hide_inactive
-		. '&showdisabled=' . $p_show_disabled . '&filter=' . $p_filter . '&search=' . $p_search,
+		helper_url_combine( $p_page, [
+			'sort' => $p_field,
+			'dir' => $t_dir,
+			'save' => '1',
+			'hideinactive' => $p_hide_inactive,
+			'showdisabled' => $p_show_disabled,
+			'filter' => $p_filter,
+			'search' => $p_search
+		] ),
 		$p_string,
 		false,
 		$p_class
@@ -1415,8 +1492,13 @@ function print_manage_project_sort_link( $p_page, $p_string, $p_field, $p_dir, $
 		$t_dir = 'ASC';
 	}
 
-	$t_field = rawurlencode( $p_field );
-	print_link( $p_page . '?sort=' . $t_field . '&dir=' . $t_dir, $p_string );
+	print_link(
+		helper_url_combine( $p_page, [
+			'sort' => $p_field,
+			'dir' => $t_dir
+		] ),
+		$p_string
+	);
 }
 
 /**
@@ -1425,7 +1507,7 @@ function print_manage_project_sort_link( $p_page, $p_string, $p_field, $p_dir, $
  * If $p_security_token is OFF, the button's form will not contain a security
  * field; this is useful when form does not result in modifications (CSRF is not
  * needed). If otherwise specified (i.e. not null), the parameter must contain
- * a valid security token, previously generated by form_security_token().
+ * a valid security token, previously generated by {@see form_security_token()}.
  * Use this to avoid performance issues when loading pages having many calls to
  * this function, such as adm_config_report.php.
  *
@@ -1442,10 +1524,10 @@ function print_manage_project_sort_link( $p_page, $p_string, $p_field, $p_dir, $
  *                                 arg name => value, defaults to null (no args).
  * @param mixed  $p_security_token Optional; null (default), OFF or security token string.
  * @param string $p_class          The CSS class of the button.
- * @see form_security_token()
+ *
  * @return void
  */
-function print_form_button( $p_action_page, $p_label, array $p_args_to_post = null, $p_security_token = null, $p_class = '' ) {
+function print_form_button( $p_action_page, $p_label, array $p_args_to_post = [], $p_security_token = null, $p_class = '' ) {
 	# TODO: ensure all uses of print_button supply arguments via $p_args_to_post (POST)
 	# instead of via $p_action_page (GET). Then only add the CSRF form token if
 	# arguments are being sent via the POST method.
@@ -1494,17 +1576,23 @@ function print_bracket_link_prepared( $p_link ) {
 }
 
 /**
- * Print a HTML link.
+ * Print a HTML link with optional icon.
  *
- * @param string  $p_link       The target URL.
- * @param string  $p_url_text   Displayed text for the link, will be escaped prior to display.
- * @param boolean $p_new_window Whether to open in a new window.
- * @param string  $p_class      The CSS class of the link.
+ * @param string $p_link       The target URL.
+ * @param string $p_url_text   Displayed text for the link, will be escaped prior to display.
+ * @param bool   $p_new_window Whether to open in a new window.
+ * @param string $p_class      The CSS class of the link.
+ * @param string $p_icon       Optional Fontawesome icon to display before $p_label
  *
  * @return void
  */
-function print_link( $p_link, $p_url_text, $p_new_window = false, $p_class = '' ) {
-	$t_url_text = string_attribute( $p_url_text );
+function print_link( $p_link, $p_url_text, $p_new_window = false, $p_class = '', $p_icon = '' ) {
+	if( $p_icon ) {
+		$t_url_text = icon_get( $p_icon, '', $p_url_text );
+	} else {
+		$t_url_text = string_attribute( $p_url_text );
+	}
+
 	if( is_blank( $p_link ) ) {
 		echo $t_url_text;
 	} else {
@@ -1624,7 +1712,7 @@ function print_page_links( $p_page, $p_start, $p_end, $p_current, $p_temp_filter
 	if( $p_current < $p_end ) {
 		print_page_link( $p_page, $t_next, $p_current + 1, $p_current, $p_temp_filter_key );
 	} else {
-		print_page_link( $p_page, $t_next, null, null, $p_temp_filter_key );
+		print_page_link( $p_page, $t_next, 0, 0, $p_temp_filter_key );
 	}
 
 	# Page numbers ...
@@ -1722,7 +1810,7 @@ function print_hidden_inputs( array $p_assoc_array ) {
  * Print hidden html input tag <input type=hidden>
  *
  * @param string $p_field_key Name parameter.
- * @param string $p_field_val Value parameter.
+ * @param string|array $p_field_val Value parameter.
  * @return void
  */
 function print_hidden_input( $p_field_key, $p_field_val ) {
@@ -1863,7 +1951,7 @@ function get_dropdown( array $p_control_array, $p_control_name, $p_match = '', $
 	}
 	$t_info = sprintf( '<select class="input-sm" %s name="%s" id="%s"%s>', $t_multiple, $p_control_name, $p_control_name, $t_size );
 	if( $p_add_any ) {
-		array_unshift_assoc( $p_control_array, META_FILTER_ANY, lang_trans( '[any]' ) );
+		array_unshift( $p_control_array, [ META_FILTER_ANY => '[any]' ] );
 	}
 	foreach ( $p_control_array as $t_name => $t_desc ) {
 		$t_sel = '';
@@ -1976,7 +2064,7 @@ function print_bug_attachment( array $p_attachment, $p_security_token ) {
 function print_bug_attachment_header( array $p_attachment, $p_security_token ) {
 	if( $p_attachment['exists'] ) {
 		if( $p_attachment['can_download'] ) {
-			echo '<a href="' . string_attribute( $p_attachment['download_url'] ) . '">';
+			echo '<a href="' . string_attribute( $p_attachment['download_url'] ) . '"' . print_attachment_link_target() . '>';
 		}
 		print_file_icon( $p_attachment['display_name'] );
 		if( $p_attachment['can_download'] ) {
@@ -1984,7 +2072,7 @@ function print_bug_attachment_header( array $p_attachment, $p_security_token ) {
 		}
 		echo lang_get( 'word_separator' );
 		if( $p_attachment['can_download'] ) {
-			echo '<a href="' . string_attribute( $p_attachment['download_url'] ) . '">';
+			echo '<a href="' . string_attribute( $p_attachment['download_url'] ) . '"' . print_attachment_link_target() . '>';
 		}
 		echo string_display_line( $p_attachment['display_name'] );
 		if( $p_attachment['can_download'] ) {
@@ -2060,7 +2148,7 @@ function print_bug_attachment_preview_image( array $p_attachment ) {
 	$t_image_url = $p_attachment['download_url'] . '&show_inline=1' . form_security_param( 'file_show_inline' );
 
 	echo "\n<div class=\"bug-attachment-preview-image\">";
-	echo '<a href="' . string_attribute( $p_attachment['download_url'] ) . '">';
+	echo '<a href="' . string_attribute( $p_attachment['download_url'] ) . '"' . print_attachment_link_target() . '>';
 	echo '<img src="' . string_attribute( $t_image_url ) . '" alt="' . string_attribute( $t_title ) . '" loading="lazy" style="' . string_attribute( $t_preview_style ) . '" />';
 	echo '</a></div>';
 }
@@ -2080,7 +2168,7 @@ function print_bug_attachment_preview_audio_video( array $p_attachment, $p_file_
 	$t_type = $p_attachment['type'];
 
 	echo "\n<div class=\"bug-attachment-preview-" . $t_type . "\">";
-	echo '<a href="' . string_attribute( $p_attachment['download_url'] ) . '">';
+	echo '<a href="' . string_attribute( $p_attachment['download_url'] ) . '"' . print_attachment_link_target() . '>';
 	echo '<' . $t_type . ' controls="controls"' . $t_preload . '>';
 	echo '<source src="' . string_attribute( $t_file_url ) . '" type="' . string_attribute( $p_file_type ) . '">';
   	echo lang_get( 'browser_does_not_support_' . $t_type );
@@ -2131,6 +2219,17 @@ function get_filesize_info( $p_size, $p_unit ) {
 }
 
 /**
+ * Returns target attribute to be added in attachment links
+ * @return string
+ */
+function print_attachment_link_target() {
+	if( config_get( 'attachments_to_new_tab' ) ) {
+		return ' target="_blank"';
+	}
+	return ' target="_self"';
+}
+
+/**
  * Print maximum file size information.
  *
  * @param integer $p_size    Size in bytes.
@@ -2155,7 +2254,7 @@ function print_dropzone_form_data() {
 	echo "\t" . 'data-max-filename-length="'. DB_FIELD_SIZE_FILENAME . '"' . "\n";
 	$t_allowed_files = config_get( 'allowed_files' );
 	if ( !empty ( $t_allowed_files ) ) {
-		$t_allowed_files = '.' . implode ( ',.', explode ( ',', config_get( 'allowed_files' ) ) );
+		$t_allowed_files = '.' . implode ( ',.', explode ( ',', $t_allowed_files ) );
 	}
 	echo "\t" . 'data-accepted-files="' . $t_allowed_files . '"' . "\n";
 	echo "\t" . 'data-default-message="' . htmlspecialchars( lang_get( 'dropzone_default_message' ) ) . '"' . "\n";
@@ -2166,7 +2265,7 @@ function print_dropzone_form_data() {
 	echo "\t" . 'data-response-error="' . htmlspecialchars( lang_get( 'dropzone_response_error' ) ) . '"' . "\n";
 	echo "\t" . 'data-cancel-upload="' . htmlspecialchars( lang_get( 'dropzone_cancel_upload' ) ) . '"' . "\n";
 	echo "\t" . 'data-cancel-upload-confirmation="' . htmlspecialchars( lang_get( 'dropzone_cancel_upload_confirmation' ) ) . '"' . "\n";
-	echo "\t" . 'data-remove-file="'. htmlspecialchars( lang_get( 'dropzone_remove_file' ) ) . '"' . "\n";
+	echo "\t" . 'data-remove-file=""' . "\n";
 	echo "\t" . 'data-remove-file-confirmation="' . htmlspecialchars( lang_get( 'dropzone_remove_file_confirmation' ) ) . '"' . "\n";
 	echo "\t" . 'data-max-files-exceeded="' . htmlspecialchars( lang_get( 'dropzone_max_files_exceeded' ) ) . '"' . "\n";
 	echo "\t" . 'data-dropzone-not-supported="' . htmlspecialchars( lang_get( 'dropzone_not_supported' ) ) . '"';
@@ -2184,14 +2283,18 @@ function print_dropzone_template(){
 	<div id="dropzone-preview-template" class="hidden">
 		<div class="dz-preview dz-file-preview">
 			<div class="dz-filename"><span data-dz-name></span></div>
-			<div><img data-dz-thumbnail /></div>
+			<img src="data:image/png;base64," alt="" data-dz-thumbnail>
+			<div class="dz-error-message">
+				<div class="dz-error-mark"><span><?php print_icon('fa-times-circle'); ?></span></div>
+				<span data-dz-errormessage></span>
+			</div>
 			<div class="dz-size" data-dz-size></div>
 			<div class="progress progress-small progress-striped active">
 				<div class="progress-bar progress-bar-success" data-dz-uploadprogress></div>
 			</div>
-			<div class="dz-success-mark"><span></span></div>
-			<div class="dz-error-mark"><span></span></div>
-			<div class="dz-error-message"><span data-dz-errormessage></span></div>
+			<a class="btn btn-primary btn-white btn-round btn-xs" data-dz-remove>
+				<?php echo lang_get( 'dropzone_remove_file' ); ?>
+			</a>
 		</div>
 	</div>
 	<?php
@@ -2199,17 +2302,20 @@ function print_dropzone_template(){
 
 /**
  * Print a button which presents a standalone form.
- * This function remains for compatibility with v1.3
- * @deprecated use print_form_button() instead
+ *
+ * This function remains for compatibility with v1.3.
+ *
  * @param string $p_action_page    The action page.
  * @param string $p_label          The button label.
  * @param array  $p_args_to_post   Associative array of arguments to be posted
  * @param mixed  $p_security_token Optional; null (default), OFF or security token string.
- * @see form_security_token()
- * @see print_form_button()
+ *
  * @return void
+ *
+ * @deprecated 2.0 use {@see print_form_button()} instead
+ * @see form_security_token()
  */
-function print_button( $p_action_page, $p_label, array $p_args_to_post = null, $p_security_token = null ) {
+function print_button( $p_action_page, $p_label, array $p_args_to_post = [], $p_security_token = null ) {
 	error_parameters( __FUNCTION__, 'print_form_button' );
 	trigger_error( ERROR_DEPRECATED_SUPERSEDED, DEPRECATED );
 	print_form_button( $p_action_page, $p_label, $p_args_to_post, $p_security_token );
@@ -2262,3 +2368,14 @@ function print_relationship_list_box( $p_default_rel_type = BUG_REL_ANY, $p_sele
 <?php
 }
 
+/**
+ * Print table spacer.
+ *
+ * @param integer $p_cols Number of columns in the table
+ * @return void
+ */
+function print_table_spacer( int $p_cols ) {
+	if( $p_cols > 0 ) {
+		echo '<tr class="spacer"><td colspan="', $p_cols, '"></td></tr>';
+	}
+}

@@ -34,6 +34,7 @@
  * @uses lang_api.php
  * @uses print_api.php
  * @uses project_api.php
+ * @uses string_api.php
  * @uses user_api.php
  * @uses user_pref_api.php
  * @uses utility_api.php
@@ -50,6 +51,7 @@ require_api( 'html_api.php' );
 require_api( 'lang_api.php' );
 require_api( 'print_api.php' );
 require_api( 'project_api.php' );
+require_api( 'string_api.php' );
 require_api( 'user_api.php' );
 require_api( 'user_pref_api.php' );
 require_api( 'utility_api.php' );
@@ -88,14 +90,18 @@ function helper_alternate_class( $p_index = null, $p_odd_class = 'row-1', $p_eve
  * becomes array('k1'=>array('a'=>1,'b'=>3),'k2'=>array('a'=>2,'b'=>4))
  *
  * @param array $p_array The array to transpose.
+ *
  * @return array|mixed transposed array or $p_array if not 2-dimensional array
+ * @throws ClientException
  */
 function helper_array_transpose( array $p_array ) {
 	$t_out = array();
 	foreach( $p_array as $t_key => $t_sub ) {
 		if( !is_array( $t_sub ) ) {
-			# This function can only handle bidimensional arrays
-			trigger_error( ERROR_GENERIC, ERROR );
+			throw new ClientException(
+				__FUNCTION__ . " can only handle bidimensional arrays",
+				ERROR_GENERIC
+			);
 		}
 
 		foreach( $t_sub as $t_subkey => $t_value ) {
@@ -621,6 +627,25 @@ function helper_mantis_url( $p_url ) {
 }
 
 /**
+ * Check if URL is external.
+ *
+ * @param string $p_url Url to check.
+ *
+ * @return bool True if URL does not belong to the same root domain as MantisBT
+ *              {@see $g_path}, false if it does.
+ */
+function helper_is_link_external( string $p_url ): bool {
+	$t_link_root_domain = helper_get_root_domain( $p_url );
+	if( !$t_link_root_domain ) {
+		# No domain = relative URL = internal
+		return false;
+	}
+
+	$t_mantis_root_domain = helper_get_root_domain( config_get_global( 'path' ) );
+	return $t_link_root_domain != $t_mantis_root_domain;
+}
+
+/**
  * convert a duration string in "[h]h:mm" to an integer (minutes)
  * @param string $p_hhmm A string in [h]h:mm format to convert.
  * @param string $p_field The field name.
@@ -710,20 +735,24 @@ function helper_filter_by_prefix( array $p_set, $p_prefix ) {
 }
 
 /**
- * Combine a Mantis page with a query string.  This handles the case where the page is a native
- * page or a plugin page.
- * @param string $p_page The page (relative or full)
- * @param string $p_query_string The query string
+ * Combine a URL with a query string or an array of query parameters.
+ *
+ * @param string       $p_page         The page (relative or full).
+ * @param string|array $p_query_string The query string or array of query parameters.
  * @return string The combined url.
  */
-function helper_url_combine( $p_page, $p_query_string ) {
+function helper_url_combine( string $p_page, $p_query_string ): string {
 	$t_url = $p_page;
+	$t_query_string = is_array( $p_query_string )
+		? string_build_query( $p_query_string )
+		: $p_query_string;
 
-	if( !is_blank( $p_query_string ) ) {
-		if( stripos( $p_page, '?' ) !== false ) {
-			$t_url .= '&' . $p_query_string;
+	if( !is_blank( $t_query_string ) ) {
+		$t_url = rtrim( $t_url, '?' );
+		if( stripos( $t_url, '?' ) !== false ) {
+			$t_url .= '&' . $t_query_string;
 		} else {
-			$t_url .= '?' . $p_query_string;
+			$t_url .= '?' . $t_query_string;
 		}
 	}
 
@@ -869,7 +898,7 @@ function helper_parse_issue_id( $p_issue_id, $p_field_name = 'issue_id' ) {
  *
  * @see $g_html_make_links
  */
-function helper_get_link_attributes( $p_return_array = true ) {
+function helper_get_link_attributes( $p_return_array = true, $p_is_external_link = false ) {
 	$t_html_make_links = config_get( 'html_make_links' );
 
 	$t_attributes = array();
@@ -889,8 +918,15 @@ function helper_get_link_attributes( $p_return_array = true ) {
 				$t_attributes['rel'] = 'noopener';
 			}
 		}
+		if( $p_is_external_link && ( $t_html_make_links & LINKS_NOFOLLOW_EXTERNAL ) ) {
+			if( isset( $t_attributes['rel'] ) ) {
+				$t_attributes['rel'] .= ',nofollow';
+			}
+			else {
+				$t_attributes['rel'] = 'nofollow';
+			}
+		}
 	}
-
 	if( $p_return_array ) {
 		return $t_attributes;
 	}
@@ -900,4 +936,64 @@ function helper_get_link_attributes( $p_return_array = true ) {
 		$t_string .= " $t_attr=\"$t_value\"";
 	}
 	return $t_string;
+}
+
+/**
+ * Checks that a string's length is within the allowed size.
+ *     
+ * @param string $p_string Text to check
+ *
+ * @return bool True if smaller than or equal to the maximum allowed length
+ *              {@see $g_max_textarea_length}.
+ */
+function helper_is_longtext_length_valid( string $p_string ): bool {
+	return mb_strlen( $p_string ) <= config_get_global( 'max_textarea_length' );
+}
+
+/**
+ * Throws error if a string's length is bigger than the allowed maximum.
+ *
+ * @param string $p_string Text to check.
+ * @param string $p_field  Field name.
+ *
+ * @throws ClientException
+ */
+function helper_ensure_longtext_length_valid( string $p_string, string $p_field ): void {
+	if( !helper_is_longtext_length_valid( $p_string ) ) {
+		$t_max_length = config_get_global( 'max_textarea_length' );
+		throw new ClientException(
+			'Long text field "' . $p_field . '" must be shorter than ' . $t_max_length . ' characters.',
+			ERROR_FIELD_TOO_LONG,
+			array( lang_get( $p_field ), $t_max_length )
+		);
+	}
+}
+
+/**
+ * Returns the root domain plus TLD from a URL.
+ *
+ * Also handles ccTLDs.
+ *
+ * @param string $p_url The URL to parse.
+ *
+ * @return string domain.tld or domain.cctld.tld or IP address.
+ */
+function helper_get_root_domain( $p_url ) {
+	$t_host = parse_url( $p_url, PHP_URL_HOST );
+	if( !$t_host ) {
+		return '';
+	}
+	if ( filter_var( $t_host, FILTER_VALIDATE_IP ) ) {
+		return $t_host; // Return IP address as is
+	}
+	$t_parts = explode( '.', $t_host );
+	$t_numParts = count( $t_parts );
+	if ( $t_numParts >= 2 ) {
+		$t_domain = $t_parts[ $t_numParts - 2 ] . '.' . $t_parts[ $t_numParts - 1 ];
+		if ( strlen( $t_parts[ $t_numParts - 1 ] ) == 2 && $t_numParts > 2 ) {
+			$t_domain = $t_parts[ $t_numParts - 3 ] . '.' . $t_domain; // Handle ccTLDs
+		}
+		return $t_domain;
+	}
+	return $t_host; // Return host if nothing matches
 }

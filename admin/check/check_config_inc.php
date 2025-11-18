@@ -32,8 +32,12 @@ if( !defined( 'CHECK_CONFIG_INC_ALLOW' ) ) {
 # MantisBT Check API
 require_once( 'check_api.php' );
 
+global $g_config_path, $g_absolute_path, $g_log_level, $g_log_destination,
+	   $g_show_detailed_errors, $g_debug_email, $g_limit_reporters;
+
 check_print_section_header_row( 'Configuration' );
 
+/** @noinspection HtmlUnknownTarget */
 check_print_test_row( 'config_inc.php configuration file exists',
 	file_exists( $g_config_path . 'config_inc.php' ),
 	array( false => 'Please use <a href="install.php">install.php</a> to perform the initial installation of MantisBT.' )
@@ -89,6 +93,21 @@ check_print_test_warn_row( 'Email debugging should be OFF',
 	empty( $g_debug_email ),
 	array( false => 'All notification e-mails will be sent to: ' . $g_debug_email )
 );
+
+# Check for Global configs stored in the database
+global $g_cache_config, $g_global_settings;
+$t_global_configs_in_db = array_intersect( array_keys( $g_cache_config ), $g_global_settings );
+$t_message = 'Make sure the following configuration options are defined as appropriate '
+	. 'in your config_inc.php file, then delete them from the database:<ul>';
+foreach( $t_global_configs_in_db as $t_config ) {
+	$t_message .= '<li>' . $t_config . '</li>';
+}
+$t_message .= '</ul>';
+check_print_test_warn_row( 'Global configuration options should not be set in the database',
+	empty( $t_global_configs_in_db ),
+	array( false => $t_message )
+);
+
 
 check_print_test_row( 'Default move category must exists ("default_category_for_moves")',
 	category_exists( config_get( 'default_category_for_moves' ) ),

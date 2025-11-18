@@ -156,7 +156,9 @@ if( $f_master_bug_id > 0 ) {
 
 	# New issues cannot be reported for the 'All Project' selection
 	if( ALL_PROJECTS == $t_current_project ) {
-		print_header_redirect( 'login_select_proj_page.php?ref=bug_report_page.php' );
+		if( !print_header_redirect( 'login_select_proj_page.php?ref=bug_report_page.php' ) ) {
+			die;
+		}
 	}
 
 	access_ensure_project_level( config_get( 'report_bug_threshold' ) );
@@ -226,6 +228,9 @@ $t_show_additional_info = in_array( 'additional_info', $t_fields );
 $t_show_due_date = in_array( 'due_date', $t_fields ) && access_has_project_level( config_get( 'due_date_update_threshold' ), helper_get_current_project(), auth_get_current_user_id() );
 $t_show_attachments = in_array( 'attachments', $t_fields ) && file_allow_bug_upload();
 $t_show_view_state = in_array( 'view_state', $t_fields ) && access_has_project_level( config_get( 'set_view_status_threshold' ) );
+$t_max_length = config_get_global( 'max_textarea_length' );
+
+$t_has_profiles = count( profile_get_all_for_user( auth_get_current_user_id() ) ) > 0;
 
 # don't index bug report page
 html_robots_noindex();
@@ -280,7 +285,7 @@ if( $t_show_attachments ) {
 				echo $t_allow_no_category ? '' : ' required';
 			?>>
 				<?php
-					print_category_option_list( $f_category_id );
+					print_category_option_list( $f_category_id, null, true );
 				?>
 			</select>
 		</td>
@@ -373,10 +378,15 @@ if( $t_show_attachments ) {
 <?php if( $t_show_platform || $t_show_os || $t_show_os_build ) { ?>
 	<tr>
 		<th class="category">
-			<label for="profile_id"><?php echo lang_get( 'select_profile' ) ?></label>
+			<?php
+			if( $t_has_profiles ) echo '<label for="profile_id">';
+			echo lang_get( 'select_profile' );
+			if( $t_has_profiles ) echo '</label>';
+			?>
+
 		</th>
 		<td>
-			<?php if( count( profile_get_all_for_user( auth_get_current_user_id() ) ) > 0 ) { ?>
+			<?php if( $t_has_profiles ) { ?>
 				<select <?php echo helper_get_tab_index() ?> id="profile_id" name="profile_id" class="input-sm">
 					<?php print_profile_option_list( auth_get_current_user_id(), $f_profile_id ) ?>
 				</select>
@@ -483,7 +493,7 @@ if( $t_show_attachments ) {
 		</th>
 		<td>
 			<select <?php echo helper_get_tab_index() ?> id="handler_id" name="handler_id" class="input-sm">
-				<option value="0" selected="selected"></option>
+				<option value="0" selected="selected">&nbsp;</option>
 				<?php print_assign_to_option_list( $f_handler_id ) ?>
 			</select>
 		</td>
@@ -573,7 +583,11 @@ if( $t_show_attachments ) {
 		</th>
 		<td>
 			<?php # Newline after opening textarea tag is intentional, see #25839 ?>
-			<textarea class="form-control" <?php echo helper_get_tab_index() ?> id="description" name="description" cols="80" rows="10" required>
+			<textarea id="description" name="description" required
+					  class="form-control" <?php echo helper_get_tab_index() ?>
+					  cols="80" rows="10"
+					  maxlength="<?php echo $t_max_length ?>"
+			>
 <?php echo string_textarea( $f_description ) ?>
 </textarea>
 		</td>
@@ -586,7 +600,11 @@ if( $t_show_attachments ) {
 			</th>
 			<td>
 				<?php # Newline after opening textarea tag is intentional, see #25839 ?>
-				<textarea class="form-control" <?php echo helper_get_tab_index() ?> id="steps_to_reproduce" name="steps_to_reproduce" cols="80" rows="10">
+				<textarea id="steps_to_reproduce" name="steps_to_reproduce"
+						  class="form-control" <?php echo helper_get_tab_index() ?>
+						  cols="80" rows="10"
+						  maxlength="<?php echo $t_max_length ?>"
+				>
 <?php echo string_textarea( $f_steps_to_reproduce ) ?>
 </textarea>
 			</td>
@@ -600,7 +618,11 @@ if( $t_show_attachments ) {
 		</th>
 		<td>
 			<?php # Newline after opening textarea tag is intentional, see #25839 ?>
-			<textarea class="form-control" <?php echo helper_get_tab_index() ?> id="additional_info" name="additional_info" cols="80" rows="10">
+			<textarea id="additional_info" name="additional_info"
+					  class="form-control" <?php echo helper_get_tab_index() ?>
+					  cols="80" rows="10"
+					  maxlength="<?php echo $t_max_length ?>"
+			>
 <?php echo string_textarea( $f_additional_info ) ?>
 </textarea>
 		</td>
@@ -609,7 +631,7 @@ if( $t_show_attachments ) {
 <?php if( $t_show_tags ) { ?>
 	<tr>
 		<th class="category">
-			<label for="attach_tag"><?php echo lang_get( 'tag_attach_long' ) ?></label>
+			<label for="tag_string"><?php echo lang_get( 'tag_attach_long' ) ?></label>
 		</th>
 		<td>
 			<?php
@@ -652,9 +674,9 @@ if( $t_show_attachments ) {
 			<?php if( $t_def['require_report'] ) {?><span class="required">*</span><?php } ?>
 			<?php if( $t_def['type'] != CUSTOM_FIELD_TYPE_RADIO && $t_def['type'] != CUSTOM_FIELD_TYPE_CHECKBOX ) { ?>
 				<label for="custom_field_<?php echo string_attribute( $t_def['id'] ) ?>">
-					<?php echo string_display_line( lang_get_defaulted( $t_def['name'] ) ) ?>
+					<?php echo string_attribute( lang_get_defaulted( $t_def['name'] ) ) ?>
 				</label>
-			<?php } else { echo string_display_line( lang_get_defaulted( $t_def['name'] ) ); } ?>
+			<?php } else { echo string_attribute( lang_get_defaulted( $t_def['name'] ) ); } ?>
 		</th>
 		<td>
 			<?php print_custom_field_input( $t_def, ( $f_master_bug_id === 0 ) ? null : $f_master_bug_id, $t_def['require_report'] ) ?>

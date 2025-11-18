@@ -234,7 +234,16 @@ function string_attribute( $p_string ) {
  * @return string
  */
 function string_url( $p_string ) {
-	return rawurlencode( $p_string );
+	return rawurlencode( (string)$p_string );
+}
+
+/**
+ * Build a URL-encoded query string from an array of key value pairs.
+ * @param  array $p_params Query string parameters.
+ * @return string
+ */
+function string_build_query( array $p_params ): string {
+	return http_build_query( $p_params, '', '&', PHP_QUERY_RFC3986 );
 }
 
 /**
@@ -286,10 +295,10 @@ function string_sanitize_url( $p_url, $p_return_absolute = false ) {
 		foreach( $t_pairs as $t_key => $t_value ) {
 			if( is_array( $t_value ) ) {
 				foreach( $t_value as $t_value_each ) {
-					$t_clean_pairs[] .= rawurlencode( $t_key ) . '[]=' . rawurlencode( $t_value_each );
+					$t_clean_pairs[] = string_url( $t_key ) . '[]=' . string_url( $t_value_each );
 				}
 			} else {
-				$t_clean_pairs[] = rawurlencode( $t_key ) . '=' . rawurlencode( $t_value );
+				$t_clean_pairs[] = string_url( $t_key ) . '=' . string_url( $t_value );
 			}
 		}
 
@@ -301,7 +310,7 @@ function string_sanitize_url( $p_url, $p_return_absolute = false ) {
 	# encode link anchor
 	$t_anchor = '';
 	if( isset( $t_matches['anchor'] ) ) {
-		$t_anchor = '#' . rawurlencode( $t_matches['anchor'] );
+		$t_anchor = '#' . string_url( $t_matches['anchor'] );
 	}
 
 	# Return an appropriate re-combined URL string
@@ -515,15 +524,16 @@ function string_insert_hrefs( $p_string ) {
 		$s_email_regex = substr_replace( email_regex_simple(), '(?:mailto:)?', 1, 0 );
 	}
 
-	# Set the link's target and type according to configuration
-	$t_link_attributes = helper_get_link_attributes( false );
-
 	# Find any URL in a string and replace it with a clickable link
 	$p_string = preg_replace_callback(
 		$s_url_regex,
-		function ( $p_match ) use ( $t_link_attributes ) {
-			$t_url_href = 'href="' . rtrim( $p_match[1], '.' ) . '"';
-			return "<a {$t_url_href}{$t_link_attributes}>{$p_match[1]}</a>";
+		function ( $p_match ) {
+			$t_url = $p_match[1];
+			$t_is_external_link = helper_is_link_external( $t_url );
+			# Set the link's target and type according to configuration
+			$t_link_attributes = helper_get_link_attributes( false, $t_is_external_link );
+			$t_url_href = 'href="' . rtrim( $t_url, '.' ) . '"';
+			return "<a {$t_url_href}{$t_link_attributes}>{$t_url}</a>";
 		},
 		$p_string
 	);
@@ -707,7 +717,7 @@ function string_get_bugnote_view_link( $p_bug_id, $p_bugnote_id, $p_detail_info 
 
 		$t_link .= '>' . bug_format_id( $t_bug_id ) . ':' . bugnote_format_id( $p_bugnote_id ) . '</a>';
 	} else {
-		$t_link = bugnote_format_id( $t_bug_id ) . ':' . bugnote_format_id( $p_bugnote_id );
+		$t_link = bug_format_id( $t_bug_id ) . ':' . bugnote_format_id( $p_bugnote_id );
 	}
 
 	return $t_link;
@@ -800,13 +810,19 @@ function string_get_bug_report_url() {
 }
 
 /**
- * return the complete URL link to the verify page including the confirmation hash
- * @param integer $p_user_id      A valid user identifier.
- * @param string  $p_confirm_hash The confirmation hash value to include in the link.
+ * Return the complete URL link to the verify page including the confirmation hash.
+ *
+ * @param int    $p_user_id      A valid user identifier.
+ * @param string $p_confirm_hash The confirmation hash value to include in the link.
+ * @param string $p_page         Verify Page (defaults to verify.php)
+ *
  * @return string
  */
-function string_get_confirm_hash_url( $p_user_id, $p_confirm_hash ) {
-	return config_get_global( 'path' ) . 'verify.php?id=' . string_url( $p_user_id ) . '&confirm_hash=' . string_url( $p_confirm_hash );
+function string_get_confirm_hash_url( $p_user_id, $p_confirm_hash, $p_page = 'verify.php' ) {
+	return helper_url_combine( config_get_global( 'path' ) . $p_page, [
+		'id' => $p_user_id,
+		'confirm_hash' => $p_confirm_hash
+	] );
 }
 
 /**

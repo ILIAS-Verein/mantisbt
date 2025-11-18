@@ -39,6 +39,7 @@
  * @file
  *
  * @author Cedric31
+ * @author Lhanars
  * @author Nicolas Eynaud
  */
 
@@ -265,7 +266,7 @@ $s_delete_account_button = 'Suprimir lo compte';
 $s_manage_profiles_link = 'Perfils';
 $s_change_preferences_link = 'Preferéncias';
 $s_edit_account_title = 'Modificar un compte';
-$s_username = 'Utilizaire';
+$s_username = 'Utilizator';
 $s_username_label = 'Nom d\'utilizaire';
 $s_realname = 'Nom vertadièr';
 $s_realname_label = 'Nom vertadièr';
@@ -451,7 +452,6 @@ $s_log_page_time = 'Temps d\'execucion';
 $s_log_page_caller = 'Apelant';
 $s_log_page_event = 'Eveniment';
 $s_please_report = 'Raportatz aquò a l\'%1$, sens vos comandar.';
-$s_warning_plain_password_authentication = '<strong>ATENCION :</strong> l\'autentificacion per senhal en clar es utilizada, aquò expausarà vòstre senhal als administrators.';
 $s_warning_default_administrator_account_present = '<strong>ATENCION :</strong> Vos caldriá desactivar lo compte per defaut « administrator » o cambiar son senhal.';
 $s_warning_admin_directory_present = '<strong>ATENCION :</strong> lo repertòri Admin deuriá èsser suprimit.';
 $s_error_database_no_schema_version = '<strong>Error :</strong> L\'estructura de la basa de donadas sembla obsoleta (config(databaseversion) es a 0) o corrompuda. Verificatz que vòstra basa de donadas es en cors d\'execucion - podèm pas trobar la version de l\'esquèma de la basa de donadas. La taula « Config » a pas renviat una version valida de l\'esquèma - demandatz d\'ajuda sus la lista de difusion mantis-help se besonh.';
@@ -677,9 +677,6 @@ $s_delete_user_button = 'Suprimir l\'utilizaire';
 $s_impersonate_user_button = 'Se far passar per l’utilizaire';
 $s_reset_password_msg = 'La reïnicializacion del senhal envia un iperligam de confirmacion per corrièr electronic.';
 $s_reset_password_msg2 = 'Reïnicializar lo senhal o daissa void.';
-$s_show_all_users = 'TOTES';
-$s_users_unused = 'INUTILIZAT';
-$s_users_new = 'NOVÈL';
 $s_account_reset_msg = 'Lo messatge de confirmacion es estat mandat a vòstra adreça de corrièr electronic...';
 $s_account_reset_msg2 = 'Lo senhal del compte es estat mes a void...';
 $s_account_unlock_msg = 'Lo compte es estat desverrolhat.';
@@ -1048,10 +1045,6 @@ $s_tags = 'Balisas';
 $s_tag_details = 'Detalhs de la balisa : %1$s';
 $s_tag_id = 'ID de balisa';
 $s_tag_name = 'Nom';
-$s_tag_creator = 'Creator';
-$s_tag_created = 'Data de creacion';
-$s_tag_updated = 'Data de darrièra modificacion';
-$s_tag_description = 'Descripcion de balisa';
 $s_tag_statistics = 'Estatisticas d\'utilizacion';
 $s_tag_update = 'Metre a jorn la balisa : %1$s';
 $s_tag_update_return = 'Retorn a la balisa';
@@ -1073,9 +1066,8 @@ $s_tag_history_detached = 'Balisa dissociada';
 $s_tag_history_renamed = 'Balisa renomenada';
 $s_tag_related = 'Balisas associadas';
 $s_tag_related_issues = 'Bògues partejats (%1$s)';
-$s_tag_stats_attached = 'Bògues associats : %1$s';
+$s_tag_stats_attached = 'Bògues associats';
 $s_tag_create = 'Crear la balisa';
-$s_show_all_tags = 'Totes';
 $s_time_tracking_billing_link = 'Seguiment del temps';
 $s_time_tracking = 'Seguit del temps';
 $s_time_tracking_time_spent = 'Temps passat :';
@@ -1191,7 +1183,7 @@ $MANTIS_ERROR[ERROR_CATEGORY_DUPLICATE] = 'Categoria duplicada.';
 $MANTIS_ERROR[ERROR_NO_COPY_ACTION] = 'Cap de còpia pas especificada.';
 $MANTIS_ERROR[ERROR_CATEGORY_NOT_FOUND] = 'Categoria introbabla.';
 $MANTIS_ERROR[ERROR_CATEGORY_NOT_FOUND_FOR_PROJECT] = 'Categoria « %1$s » introbabla pel projècte « %2$s ».';
-$MANTIS_ERROR[ERROR_CATEGORY_CANNOT_DELETE_DEFAULT] = 'Aquesta categoria pòt pas èsser suprimida, perque es definida coma "Categoria per defaut pels desplaçaments".';
+$MANTIS_ERROR[ERROR_CATEGORY_CANNOT_UPDATE_DEFAULT] = 'Aquesta categoria pòt pas èsser suprimida, perque es definida coma "Categoria per defaut pels desplaçaments".';
 $MANTIS_ERROR[ERROR_VERSION_DUPLICATE] = 'Version duplicada.';
 $MANTIS_ERROR[ERROR_VERSION_NOT_FOUND] = 'Version "%1$s" introbabla.';
 $MANTIS_ERROR[ERROR_USER_NAME_INVALID] = 'Nom d\'utilizaire invalid. Lo nom d\'utilizaire pòt pas conténer que las letras latinas, nombres, espacis, junhents, punts, signes mai e traits de soslinhament.';
@@ -1225,7 +1217,7 @@ $MANTIS_ERROR[ERROR_TOKEN_NOT_FOUND] = 'Geton introbable.';
 $MANTIS_ERROR[ERROR_EVENT_UNDECLARED] = 'L\'eveniment « %1$s » es indefinit.';
 $MANTIS_ERROR[ERROR_PLUGIN_NOT_REGISTERED] = 'Lo modul « %1$s » es pas enregistrat.';
 $MANTIS_ERROR[ERROR_PLUGIN_ALREADY_INSTALLED] = 'Lo modul « %1$s » es ja installat.';
-$MANTIS_ERROR[ERROR_PLUGIN_PAGE_NOT_FOUND] = 'La pagina « %2$s » existís pas dins lo modul « %1$s ».';
+$MANTIS_ERROR[ERROR_PLUGIN_PAGE_NOT_FOUND] = 'La pagina «%2$s» non existís dins lo modul «%1$s».';
 $MANTIS_ERROR[ERROR_PLUGIN_INSTALL_FAILED] = 'Fracàs de l\'installacion del plugin: %1$s.';
 $MANTIS_ERROR[ERROR_PLUGIN_UPGRADE_FAILED] = 'La mesa a jorn del l\'esquèma pel ligicial antispam a fracassat en blôt #%1$s.';
 $MANTIS_ERROR[ERROR_PLUGIN_UPGRADE_NEEDED] = 'Lo modul « %1$s » deu èsser mes a jorn abans de poder accedir a aquesta pagina.';
@@ -1254,3 +1246,7 @@ $s_move = 'Desplaçar';
 $s_close = 'Tampar';
 $s_add = 'Apondre';
 $s_login = 'Dobrir la session';
+$s_filter_all = 'TOTES';
+$s_filter_new = 'NOVÈL';
+$s_filter_unused_tags = 'INUTILIZAT';
+$s_filter_unused = 'INUTILIZAT';

@@ -38,6 +38,7 @@
  * @ingroup Language
  * @file
  *
+ * @author 555
  * @author Athena in Wonderland
  * @author Caçador de Palavras
  * @author Dianakc
@@ -68,7 +69,6 @@
  * @author TheGabrielZaum
  * @author Tuliouel
  * @author Walesson
- * @author 555
  */
 
 $s_actiongroup_menu_copy = 'Copiar';
@@ -511,12 +511,10 @@ $s_log_page_time = 'Tempo de execução';
 $s_log_page_caller = 'Caller';
 $s_log_page_event = 'Evento';
 $s_please_report = 'Por favor, reporte isto ao %1$s.';
-$s_warning_plain_password_authentication = '<strong>AVISO:</strong> É utilizada a autenticação plena de senha, isto pode expor suas senhas aos administradores.';
 $s_warning_default_administrator_account_present = '<strong>AVISO:</strong> Você deve desabilitar a conta padrão \'administrador\' ou alterar sua senha.';
 $s_warning_admin_directory_present = '<strong>AVISO:</strong> Diretório Admin deve ser removido.';
 $s_warning_change_setting = '<strong>Aviso:</strong> "%1$s" não está definido para o valor padrão (%2$s).';
 $s_warning_security_hazard = 'Este é um risco de segurança em potencial, pois ele pode expor informações confidenciais.';
-$s_warning_integrity_hazard = 'Isto fará com que MantisBT para continuar quando ocorre erros e pode levar a problemas de integridade de sistema/dados.';
 $s_warning_debug_email = '<strong>Aviso:</strong> "<code>debug_email</code>" não está definido para <code>OFF</code>, todos os e-mails de notificação será enviada para "%1$s".';
 $s_error_database_no_schema_version = '<strong>Ero:</strong> Sua versão do esquema do banco de dados é 0. Isso pode acontecer porque o banco de dados está corrompido ou o valor de "database_version" não pode ser recuperado da tabela de configuração ou a estrutura do banco de dados é de uma versão desatualizada do MantisBT (pré 1.0.0).';
 $s_error_database_version_out_of_date_2 = '<strong>AVISO:</strong> A estrutura da base de dados pode estar desatualizada. Por favor atualize <a href="admin/install.php">aqui</a> antes de entrar.';
@@ -773,9 +771,6 @@ $s_delete_user_button = 'Apagar Usuário';
 $s_impersonate_user_button = 'Representar Usuário';
 $s_reset_password_msg = 'Redefinir Senha enviará o endereço de confirmação via e-mail.';
 $s_reset_password_msg2 = 'Redefinir Senha deixará a senha em branco.';
-$s_show_all_users = 'TODOS';
-$s_users_unused = 'NÃO UTILIZADO';
-$s_users_new = 'NOVO';
 $s_email_not_unique = 'O endereço de e-mail está associado a pelo menos uma outra conta de usuário';
 $s_account_reset_msg = 'Uma solicitação de confirmação foi enviada ao endereço de e-mail do usuário selecionado. Através deste, o usuário será capaz de alterar sua senha.';
 $s_account_reset_msg2 = 'A senha da conta foi deixada em branco...';
@@ -1180,10 +1175,6 @@ $s_tags = 'Marcadores';
 $s_tag_details = 'Detalhes do marcador: %1$s';
 $s_tag_id = 'ID do Marcador';
 $s_tag_name = 'Nome';
-$s_tag_creator = 'Criador';
-$s_tag_created = 'Date de Criação';
-$s_tag_updated = 'Última Atualização';
-$s_tag_description = 'Descrição do marcador';
 $s_tag_statistics = 'Estatísticas de Uso';
 $s_tag_update = 'Atualizar Marcador: %1$s';
 $s_tag_update_return = 'Voltar ao Marcador';
@@ -1206,9 +1197,8 @@ $s_tag_history_detached = 'Marcador Removido';
 $s_tag_history_renamed = 'Marcador Renomeado';
 $s_tag_related = 'Marcadores Relacionados';
 $s_tag_related_issues = 'Tarefas compartilhadas (%1$s)';
-$s_tag_stats_attached = 'Tarefas relacionadas: %1$s';
+$s_tag_stats_attached = 'Tarefas relacionadas';
 $s_tag_create = 'Criar Marcador';
-$s_show_all_tags = 'TODAS';
 $s_time_tracking_billing_link = 'Acompanhamento de Tempo';
 $s_time_tracking = 'Acompanhamento de tempo';
 $s_time_tracking_time_spent = 'Tempo gasto:';
@@ -1357,7 +1347,7 @@ $MANTIS_ERROR[ERROR_CATEGORY_DUPLICATE] = 'Uma categoria com este nome já exist
 $MANTIS_ERROR[ERROR_NO_COPY_ACTION] = 'Não foi especificada uma ação de cópia.';
 $MANTIS_ERROR[ERROR_CATEGORY_NOT_FOUND] = 'Categoria não encontrada.';
 $MANTIS_ERROR[ERROR_CATEGORY_NOT_FOUND_FOR_PROJECT] = 'Categoria "%1$s" não foi encontrada para o projeto "%2$s".';
-$MANTIS_ERROR[ERROR_CATEGORY_CANNOT_DELETE_DEFAULT] = 'Esta Categoria não pode ser eliminada, pois é definida como "Categoria Padrão para Movimentos".';
+$MANTIS_ERROR[ERROR_CATEGORY_CANNOT_UPDATE_DEFAULT] = 'Esta Categoria não pode ser eliminada, pois é definida como "Categoria Padrão para Movimentos".';
 $MANTIS_ERROR[ERROR_CATEGORY_CANNOT_DELETE_HAS_ISSUES] = 'Categoria "%1$s" não pode ser deletada, pois está associada com outro ou mais problemas.';
 $MANTIS_ERROR[ERROR_VERSION_DUPLICATE] = 'Uma versão com este nome já existe.';
 $MANTIS_ERROR[ERROR_VERSION_NOT_FOUND] = 'Versão \'%1$s\' não encontrada.';
@@ -1457,3 +1447,7 @@ $s_move = 'Mover';
 $s_close = 'Fechar';
 $s_add = 'Adicionar';
 $s_login = 'Entrar';
+$s_filter_all = 'TODOS';
+$s_filter_new = 'NOVO';
+$s_filter_unused_tags = 'NÃO UTILIZADO';
+$s_filter_unused = 'NÃO UTILIZADO';

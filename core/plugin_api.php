@@ -39,6 +39,8 @@
  * @uses logging_api.php
  */
 
+use Mantis\classes\MissingHooksPlugin;
+
 require_api( 'access_api.php' );
 require_api( 'config_api.php' );
 require_api( 'constant_inc.php' );
@@ -185,15 +187,20 @@ function plugin_route_group( $p_base_name = null ) {
 }
 
 /**
- * Return a path to a plugin file.
- * @param string $p_filename  File name.
- * @param string $p_base_name Plugin base name.
- * @return mixed File path or false if FNF
+ * Returns the path to a plugin file, or the plugin's files directory.
+ * @param string $p_filename  File name; if not set, the function will return the plugin's files directory.
+ * @param string $p_base_name Plugin base name (defaults to the current plugin).
+ * @return string|false File path or false if file cannot be found.
  */
-function plugin_file_path( $p_filename, $p_base_name ) {
-	$t_file_path = config_get_global( 'plugin_path' );
-	$t_file_path .= $p_base_name . DIRECTORY_SEPARATOR;
-	$t_file_path .= 'files' . DIRECTORY_SEPARATOR . $p_filename;
+function plugin_file_path( $p_filename = '', $p_base_name = '' ) {
+	$t_file_path = config_get_global( 'plugin_path' )
+		. ( $p_base_name ?: plugin_get_current() ) . DIRECTORY_SEPARATOR
+		. 'files' . DIRECTORY_SEPARATOR;
+
+	if( !$p_filename ) {
+		return $t_file_path;
+	}
+	$t_file_path .= $p_filename;
 
 	return( is_file( $t_file_path ) ? $t_file_path : false );
 }
@@ -240,17 +247,18 @@ function plugin_file_include( $p_filename, $p_basename = null ) {
 	}
 
 	$t_content_type = '';
-	$t_file_info_type = file_get_mime_type( $t_file_path );
-	if( $t_file_info_type !== false ) {
-		$t_content_type = $t_file_info_type;
-	}
 
 	# allow overriding the content type for specific text and image extensions
 	# see bug #13193 for details
-	if( strpos( $t_content_type, 'text/' ) === 0 || strpos( $t_content_type, 'image/' ) === 0 ) {
-		$t_extension = pathinfo( $t_file_path, PATHINFO_EXTENSION );
-		if( $t_extension && array_key_exists( $t_extension, $g_plugin_mime_types ) ) {
-			$t_content_type =  $g_plugin_mime_types[$t_extension];
+	$t_extension = pathinfo( $t_file_path, PATHINFO_EXTENSION );
+	if( $t_extension && array_key_exists( $t_extension, $g_plugin_mime_types ) ) {
+		$t_content_type = $g_plugin_mime_types[$t_extension];
+	}
+
+	if( !$t_content_type ) {
+		$t_file_info_type = file_get_mime_type( $t_file_path );
+		if( $t_file_info_type !== false ) {
+			$t_content_type = $t_file_info_type;
 		}
 	}
 
@@ -258,7 +266,14 @@ function plugin_file_include( $p_filename, $p_basename = null ) {
 		header( 'Content-Type: ' . $t_content_type );
 	}
 
-	readfile( $t_file_path );
+	$t_mtime = @filemtime( $t_file_path );
+	header( 'Last-Modified: ' . gmdate( 'D, d M Y H:i:s \G\M\T', $t_mtime ) );
+	if( isset( $_SERVER['HTTP_IF_MODIFIED_SINCE'] )
+		&& ( $t_mtime <= strtotime( $_SERVER['HTTP_IF_MODIFIED_SINCE'] ) ) ) {
+		http_response_code( HTTP_STATUS_NOT_MODIFIED );
+	} else {
+		readfile( $t_file_path );
+	}
 }
 
 /**
@@ -451,8 +466,13 @@ function plugin_error( $p_error_name, $p_error_type = ERROR, $p_basename = null 
 
 /**
  * Hook a plugin's callback function to an event.
+ *
+ * Plugin hooks are expected to be methods of the plugin's base class. Regular
+ * functions will not be called.
+ *
  * @param string $p_name     Event name.
  * @param string $p_callback Callback function.
+ *
  * @return void
  */
 function plugin_event_hook( $p_name, $p_callback ) {
@@ -462,26 +482,26 @@ function plugin_event_hook( $p_name, $p_callback ) {
 
 /**
  * Hook multiple plugin callbacks at once.
+ *
  * @param array $p_hooks Array of event name/callback key/value pairs.
- * @return void
+ *
+ * @return bool True if all events were successfully hooked, false otherwise.
  */
 function plugin_event_hook_many( array $p_hooks ) {
-	if( !is_array( $p_hooks ) ) {
-		return;
-	}
-
 	$t_basename = plugin_get_current();
 
+	$t_return = true;
 	foreach( $p_hooks as $t_event => $t_callbacks ) {
 		if( !is_array( $t_callbacks ) ) {
-			event_hook( $t_event, $t_callbacks, $t_basename );
-			continue;
+			$t_callbacks = array( $t_callbacks );
 		}
-
 		foreach( $t_callbacks as $t_callback ) {
-			event_hook( $t_event, $t_callback, $t_basename );
+			if( !event_hook( $t_event, $t_callback, $t_basename ) ) {
+				$t_return = false;
+			}
 		}
 	}
+	return $t_return;
 }
 
 /**
@@ -826,8 +846,13 @@ function plugin_uninstall( MantisPlugin $p_plugin ) {
  * @return MantisPlugin[] List of found plugins, with basename as key.
  */
 function plugin_find_all() {
+	static $s_plugins;
+	if( !is_null( $s_plugins ) ) {
+		return $s_plugins;
+	}
+	
 	$t_plugin_path = config_get_global( 'plugin_path' );
-	$t_plugins = array(
+	$s_plugins = array(
 		'MantisCore' => new MantisCorePlugin( 'MantisCore' ),
 	);
 
@@ -848,7 +873,7 @@ function plugin_find_all() {
 				$t_plugin = plugin_register( $t_file, true );
 
 				if( !is_null( $t_plugin ) ) {
-					$t_plugins[$t_file] = $t_plugin;
+					$s_plugins[$t_file] = $t_plugin;
 				}
 			}
 		}
@@ -856,12 +881,12 @@ function plugin_find_all() {
 	}
 
 	# Process missing plugins (i.e. installed without code in plugins directory)
-	$t_missing_plugins = array_diff( $t_installed_plugins, array_keys( $t_plugins ) );
+	$t_missing_plugins = array_diff( $t_installed_plugins, array_keys( $s_plugins ) );
 	foreach( $t_missing_plugins as $t_missing_plugin ) {
-		$t_plugins[$t_missing_plugin] = new MissingPlugin( $t_missing_plugin );
+		$s_plugins[$t_missing_plugin] = new MissingPlugin( $t_missing_plugin );
 	}
 
-	return $t_plugins;
+	return $s_plugins;
 }
 
 /**
@@ -889,9 +914,17 @@ function plugin_include( $p_basename, $p_child = null ) {
 }
 
 /**
- * Allows a plugin page to require a plugin-specific API
+ * Allows a plugin page to require a plugin-specific API.
+ *
+ * This function's purpose is to include a plugin-specific API (e.g. helper
+ * functions) without having to worry about the actual plugin path.
+ *
+ * NOTE: it is not intended to, and in fact will not register variables in the
+ * global namespace.
+ *
  * @param string $p_file     The API to be included.
  * @param string $p_basename Plugin's basename (defaults to current plugin).
+ *
  * @return void
  */
 function plugin_require_api( $p_file, $p_basename = null ) {
@@ -963,15 +996,23 @@ function plugin_register( $p_basename, $p_return = false, $p_child = null ) {
 				);
 				return $t_plugin->getInvalidPlugin();
 			}
-
-			if( $p_return ) {
-				return $t_plugin;
-			} else {
-				$g_plugin_cache[$t_basename] = $t_plugin;
-			}
+		} elseif( basename( $_SERVER['SCRIPT_NAME'] ) == 'manage_plugin_page.php' ) {
+			# We don't want to throw an error here, as this is the place where
+			# information about the invalid Plugin is displayed.
+			$t_plugin = new MissingClassPlugin( $t_basename );
+			log_event(
+				LOG_PLUGIN,
+				"Plugin '$t_basename' is invalid ('$t_classname' class is not defined)"
+			);
 		} else {
 			error_parameters( $t_basename, $t_classname );
 			trigger_error( ERROR_PLUGIN_CLASS_NOT_FOUND, ERROR );
+		}
+
+		if( $p_return ) {
+			return $t_plugin;
+		} else {
+			$g_plugin_cache[$t_basename] = $t_plugin;
 		}
 	}
 
@@ -1103,7 +1144,13 @@ function plugin_init( $p_basename ) {
 		}
 
 		# finish initializing the plugin
-		$t_plugin->__init();
+		if( !$t_plugin->__init() ) {
+			$t_invalid = new MissingHooksPlugin( $p_basename );
+			$t_invalid->setInvalidPlugin( $t_plugin );
+			$g_plugin_cache[$p_basename] = $t_invalid;
+			plugin_pop_current();
+			return false;
+		}
 		$g_plugin_cache_init[$p_basename] = true;
 
 		plugin_pop_current();

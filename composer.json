@@ -3,21 +3,27 @@
     "description": "Mantis Bug Tracker",
     "type": "project",
     "require": {
-        "php": "^7.2.5 || ^8.0",
+        "php": "^7.4 || ^8.0",
         "ext-mbstring": "*",
         "ext-json": "*",
+        "ext-tokenizer": "*",
         "slim/slim": "^3.0",
         "guzzlehttp/guzzle": "^7.5",
         "vboctor/disposable_email_checker": "^3.0",
         "adodb/adodb-php": "^5.22",
-        "phpmailer/phpmailer": "~6.0",
-        "erusev/parsedown": "^1.7.0, <=1.7.3",
+        "phpmailer/phpmailer": "~7.0",
+        "erusev/parsedown": "^1.7.4",
         "ezyang/htmlpurifier": "^4.14",
         "dapphp/securimage": "dev-mantis"
     },
     "require-dev": {
         "ext-zip": "*",
-        "phpunit/phpunit": "^8.5"
+        "phpunit/phpunit": "^9.6.11 || ^10.5 || ^11.5"
+    },
+    "autoload": {
+        "psr-4": {
+            "Mantis\\": [""]
+        }
     },
     "repositories": [
         {
@@ -36,7 +42,7 @@
     ],
     "config": {
         "platform": {
-            "php": "7.2.5"
+            "php": "7.4.33"
         }
     }
 }

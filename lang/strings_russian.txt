@@ -45,6 +45,7 @@
  * @author DDPAT
  * @author DevilishSkull
  * @author Diralik
+ * @author Dirruw'o
  * @author Dregad
  * @author Edible Melon
  * @author Eleferen
@@ -59,6 +60,7 @@
  * @author Kareyac
  * @author Kirill
  * @author Lega4
+ * @author Lutece398
  * @author Mailman
  * @author Movses
  * @author MuratTheTurkish
@@ -66,8 +68,10 @@
  * @author Okras
  * @author Ole Yves
  * @author Pacha Tchernof
+ * @author Pavel200071
  * @author Redredsonia
  * @author Sabbah
+ * @author SaldırganSincap
  * @author Semen
  * @author Thothsum
  * @author Vlad5250
@@ -149,6 +153,7 @@ $s_inherit = 'Наследовать категории';
 $s_inherit_global = 'Наследовать глобальные категории';
 $s_inherit_parent = 'Наследовать родительские категории';
 $s_update_subproject_inheritance = 'Изменить наследование для подпроектов';
+$s_category_disabled = 'Категория отключена, выберите другую.';
 $s_duplicate_of = 'дублирует';
 $s_has_duplicate = 'дублируется';
 $s_related_to = 'связана с';
@@ -345,7 +350,7 @@ $s_redirect_delay = 'Задержка перед перенаправление�
 $s_seconds = 'с';
 $s_with_minimum_severity = 'С влиянием не менее';
 $s_bugnote_order = 'Порядок сортировки комментариев';
-$s_bugnote_order_asc = 'По возраст.';
+$s_bugnote_order_asc = 'по возрастанию';
 $s_bugnote_order_desc = 'По убыванию';
 $s_email_on_new = 'Уведомлять о создании';
 $s_email_on_assigned = 'Уведомлять о назначении';
@@ -508,17 +513,18 @@ $s_unique_queries_executed = 'Выполнено уникальных запро
 $s_total_query_execution_time = 'Общее время выполнения запроса: %1$s секунд';
 $s_page_execution_time = 'Время формирования страницы: %1$s секунд';
 $s_memory_usage = 'Использовано памяти: %1$s Кб';
+$s_debug_log = 'Журнал отладки';
+$s_debug_log_empty = 'Журнал пуст.';
 $s_log_page_number = 'Номер';
 $s_log_page_time = 'Время выполнения';
 $s_log_page_caller = 'Звонящий';
 $s_log_page_event = 'Событие';
 $s_please_report = 'Пожалуйста, перешлите это %1$s.';
-$s_warning_plain_password_authentication = '<strong>Внимание:</strong> Пароли хранятся в открытом виде. Это делает ваш пароль видимым для администраторов.';
 $s_warning_default_administrator_account_present = '<strong>ПРЕДУПРЕЖДЕНИЕ:</strong> Вы должны удалить профиль \'administrator\' или изменить для него пароль.';
 $s_warning_admin_directory_present = '<strong>Внимание:</strong> каталог «admin» должен быть удалён или доступ к нему должен быть ограничен.';
+$s_warning_host_header_injection_hazard = '<strong>Предупреждение:</strong> «path» не определён в config_inc.php. Если оставить поле пустым, это будет представлять угрозу безопасности, поскольку путь будет установлен на основе заголовков HTTP-запроса, что подвергает вашу систему атакам путём внедрения заголовка хоста.';
 $s_warning_change_setting = '<strong>Внимание:</strong> для «%1$s» не установлено значение по умолчанию (%2$s).';
 $s_warning_security_hazard = 'Это несёт потенциальную угрозу безопасности, поскольку может привести к разглашению конфиденциальных сведений.';
-$s_warning_integrity_hazard = 'Это заставит MantisBT продолжать работу, когда возникают ошибки, и может привести к проблемам с целостностью данных системы.';
 $s_warning_debug_email = '<strong>Внимание:</strong> "<code>debug_email</code>" не установлен в <code>OFF</code>, все почтовые события будут отправляться "%1$s".';
 $s_error_database_no_schema_version = '<strong>Ошибка:</strong> Версия схемы вашей базы данных равна 0. Это может произойти либо из-за повреждения базы данных, либо из-за того, что значение «database_version» невозможно извлечь из таблицы конфигурации или структура базы данных — из устаревшей версии MantisBT (ниже 1.0.0).';
 $s_error_database_version_out_of_date_2 = '<strong>ПРЕДУПРЕЖДЕНИЕ:</strong> Структура базы данных, возможно, устарела. Пожалуйста <a href="admin/install.php">произведите обновление здесь</a> перед тем как продолжить.';
@@ -557,6 +563,7 @@ $s_create_new_account_title = 'Создание новой учётной зап
 $s_verify_password = 'Подтверждение пароля';
 $s_enabled = 'Активен';
 $s_enabled_label = 'Активен';
+$s_disabled = 'Отключено';
 $s_protected = 'Защищен';
 $s_protected_label = 'Защищен';
 $s_create_user_button = 'Создать';
@@ -576,7 +583,7 @@ $s_manage_config_link = 'Настройка';
 $s_manage_threshold_config = 'Ограничения процесса';
 $s_manage_email_config = 'Почтовые уведомления';
 $s_manage_workflow_config = 'Переходы состояний процесса';
-$s_manage_workflow_graph = 'График рабочего процесса';
+$s_manage_workflow_graph = 'Граф рабочего процесса';
 $s_manage_tags_link = 'Теги';
 $s_create_new_account_link = 'Создать учётную запись';
 $s_projects_link = 'Проекты';
@@ -592,6 +599,7 @@ $s_p = 'з';
 $s_date_created = 'Создана';
 $s_last_visit = 'Посл. вход';
 $s_last_visit_label = 'Последний вход:';
+$s_failed_login_count = 'Неудачные входы';
 $s_edit_user_link = 'Изменить учётную запись';
 $s_search_user_hint = 'Имя пользователя, настоящее имя или эл. почта';
 $s_separate_list_items_by = '(отделяйте пункты списка с помощью «%1$s»)';
@@ -674,7 +682,7 @@ $s_plugin = 'Плагин';
 $s_plugins_installed = 'Установленные плагины';
 $s_plugins_available = 'Доступные плагины';
 $s_plugins_missing = 'Отсутствующие или неверные плагины';
-$s_plugins_missing_description = 'Плагины в списке ниже зарегистрированы, но их исходный код не может быть найден или загружен из «%s».<br>Попробуйте переустановить или удалить их.';
+$s_plugins_missing_description = 'Плагины в приведенном ниже списке либо <ul><li>зарегистрированы, но их исходный код не удалось найти в "%s", либо загружены из "%s".</li><li>установлены, но их не удалось инициализировать.</li></ul>Попробуйте переустановить или удалить они.';
 $s_plugin_description = 'Описание';
 $s_plugin_problem_description = 'Описание проблемы';
 $s_plugin_author = 'Автор: %1$s';
@@ -700,7 +708,9 @@ $s_plugin_invalid_status_message = 'Следующие обязательные 
 $s_plugin_missing_description = 'Отсутствующий плагин';
 $s_plugin_missing_status_message = 'Плагин установлен в базе данных Mantis, но не может быть загружен.';
 $s_plugin_missing_class_description = 'Отсутствует базовый класс плагина';
-$s_plugin_missing_class_status_message = 'Был найден каталог для этого подключаемого модуля, но внутри него не было соответствующего кода подключаемого модуля. Убедитесь, что имя каталога соответствует базовому имени плагина (с учетом регистра)';
+$s_plugin_missing_class_status_message = 'Был найден каталог для этого плагина, но в нем нет соответствующего кода плагина. Убедитесь, что: имя каталога совпадает с базовым именем плагина "%1$s" (с учетом регистра), в каталоге существует PHP-файл с таким же именем, и он определяет класс с именем "%2$s", расширяющий MantisPlugin.';
+$s_plugin_missing_event = 'Пропущенные события';
+$s_plugin_missing_event_status_message = 'Плагин пытается перехватить необъявленные события: %s.';
 $s_project_added_msg = 'Проект добавлен...';
 $s_category_added_msg = 'Категория добавлена...';
 $s_category_deleted_msg = 'Категория удалена...';
@@ -776,9 +786,6 @@ $s_delete_user_button = 'Удалить учётную запись';
 $s_impersonate_user_button = 'Открыть сайт от лица этого пользователя';
 $s_reset_password_msg = 'Сброс пароля приводит к отправке по электронной почте ссылки на страницу подтверждения.';
 $s_reset_password_msg2 = 'Сброс пароля приводит к установке пустого пароля.';
-$s_show_all_users = 'Все';
-$s_users_unused = 'Неиспользуемые';
-$s_users_new = 'Новые';
 $s_email_not_unique = 'Адрес электронной почты связан с по крайней мере одной другой учётной записью пользователя';
 $s_account_reset_msg = 'По адресу электронной почты указанного пользователя отправлен запрос подтверждения. С его помощью пользователь сможет изменить пароль.';
 $s_account_reset_msg2 = 'Пароль к учётной записи установлен пустым...';
@@ -943,8 +950,8 @@ $s_filter_match_any = 'Любое условие';
 $s_none = 'пустые';
 $s_current = 'текущий';
 $s_search = 'Поиск';
-$s_view_prev_link = 'Пред.';
-$s_view_next_link = 'След.';
+$s_view_prev_link = 'Посмотреть пред.';
+$s_view_next_link = 'Посмотреть след.';
 $s_prev = 'Пред.';
 $s_next = 'След.';
 $s_first = 'Первая';
@@ -1054,6 +1061,7 @@ $s_bytes = 'байт';
 $s_kib = 'КиБ';
 $s_attachment_missing = 'Вложение отсутствует';
 $s_attachment_count = 'Количество вложений';
+$s_bugnotes_count = 'Количество заметок к задаче';
 $s_view_attachments_for_issue = 'Открыть %1$d вложение (я, й) для задачи #%2$d';
 $s_warning_update_custom_field_type = '<strong>Внимание:</strong> Пользовательское поле «%1$s» уже имеет сохранённые значения. Изменение типа поля может привести к ошибкам и неожиданным последствиям, если существующие значения не соответствуют новому типу поля. Чтобы продолжить, нажмите кнопку ниже';
 $s_phpmailer_language = 'ru';
@@ -1170,7 +1178,7 @@ $s_detach_own_tags = 'Отключить теги, прикрепленные о
 $s_create_new_tags = 'Создать новые метки';
 $s_edit_tags = 'Редактировать имена и описания меток';
 $s_edit_own_tags = 'Редактировать метки, созданные тем же пользователем';
-$s_loading = 'Загрузка...';
+$s_loading = 'Загружается…';
 $s_between_date = 'Между';
 $s_on_or_before_date = 'На дату или до';
 $s_before_date = 'До';
@@ -1184,16 +1192,12 @@ $s_tags = 'Метки';
 $s_tag_details = 'Сведения о метке: %1$s';
 $s_tag_id = 'ID метки';
 $s_tag_name = 'Название';
-$s_tag_creator = 'Автор';
-$s_tag_created = 'Дата создания';
-$s_tag_updated = 'Последнее изменение';
-$s_tag_description = 'Описание метки';
 $s_tag_statistics = 'Статистика использования';
 $s_tag_update = 'Обновить метку: %1$s';
 $s_tag_update_return = 'Назад';
 $s_tag_update_button = 'Изменить метку';
 $s_tag_delete_button = 'Удалить метку';
-$s_tag_delete_message = 'Вы уверены, что хотите удалить эту метку?';
+$s_tag_delete_message = 'Вы уверены, что хотите удалить метку "%1$s"?';
 $s_tag_existing = '<Метки>';
 $s_tag_none_attached = 'Нет связанных меток.';
 $s_tag_attach = 'Добавить';
@@ -1210,9 +1214,8 @@ $s_tag_history_detached = 'Метка убрана';
 $s_tag_history_renamed = 'Метка переименована';
 $s_tag_related = 'Связанные метки';
 $s_tag_related_issues = 'Общие задачи (%1$s)';
-$s_tag_stats_attached = 'Прикрепленные задачи: %1$s';
+$s_tag_stats_attached = 'Прикрепленные задачи';
 $s_tag_create = 'Создать метку';
-$s_show_all_tags = 'Все';
 $s_time_tracking_billing_link = 'Учёт времени';
 $s_time_tracking = 'Учет времени';
 $s_time_tracking_time_spent = 'Затраченное время:';
@@ -1251,6 +1254,7 @@ $s_database_information = 'Информация о базе данных MantisB
 $s_path_information = 'Путь к MantisBT';
 $s_mantisbt_database_statistics = 'Статистика базы данных MantisBT';
 $s_php_version = 'Версия PHP';
+$s_os_information = 'Информация о провайдере';
 $s_adodb_version = 'Версия ADOdb';
 $s_database_driver = 'Драйвер базы данных';
 $s_database_version_description = 'Версия база данных, описание';
@@ -1284,7 +1288,8 @@ $s_timeline_no_activity = 'Действий за этот период не об
 $s_timeline_title = 'Активность';
 $s_timeline_more = 'Показать ещё...';
 $s_missing_error_string = 'Отсутствует строка ошибки: %1$s';
-$MANTIS_ERROR[ERROR_GENERIC] = 'При выполнении действия произошла ошибка. Возможно, об этом стоит сообщить вашему местному администратору.';
+$MANTIS_ERROR[ERROR_GENERIC] = 'При выполнении действия произошла ошибка. Вы можете сообщить об этом вашему местному администратору.';
+$MANTIS_ERROR[ERROR_GENERIC_DETAILS] = 'Подробности ошибки: %s';
 $MANTIS_ERROR[ERROR_SQL] = 'Обнаружена ошибка SQL .';
 $MANTIS_ERROR[ERROR_REPORT] = 'Во введенной информации обнаружены ошибки.';
 $MANTIS_ERROR[ERROR_NO_FILE_SPECIFIED] = 'Не указан файл.';
@@ -1292,7 +1297,7 @@ $MANTIS_ERROR[ERROR_FILE_DISALLOWED] = 'Этот тип файлов запре�
 $MANTIS_ERROR[ERROR_NO_DIRECTORY] = 'Каталог не существует. Проверьте настройки проекта.';
 $MANTIS_ERROR[ERROR_DUPLICATE_PROJECT] = 'Проект с таким названием уже существует.';
 $MANTIS_ERROR[ERROR_EMPTY_FIELD] = 'Обязательное поле \'%1$s\' не заполнено. Пожалуйста, проверьте правильность заполнения.';
-$MANTIS_ERROR[ERROR_INVALID_FIELD_VALUE] = 'Неверное значение для \'%1$s\'';
+$MANTIS_ERROR[ERROR_INVALID_FIELD_VALUE] = 'Неверное значение для "%1$s"';
 $MANTIS_ERROR[ERROR_PROTECTED_ACCOUNT] = 'Эта учётная запись защищена. Вы не можете выполнить запрашиваемое действие, пока защита применена к учётной записи.';
 $MANTIS_ERROR[ERROR_ACCESS_DENIED] = 'Доступ запрещён.';
 $MANTIS_ERROR[ERROR_UPLOAD_FAILURE] = 'Загрузка файла не удалась. Файл недоступен для MantisBT. Проверьте настройки проекта.';
@@ -1302,7 +1307,7 @@ $MANTIS_ERROR[ERROR_GPC_VAR_NOT_FOUND] = 'Не найден параметр "%1
 $MANTIS_ERROR[ERROR_USER_NAME_NOT_UNIQUE] = 'Это регистрационное имя пользователя уже задействовано. Пожалуйста, вернитесь назад и выберите другое.';
 $MANTIS_ERROR[ERROR_USER_EMAIL_NOT_UNIQUE] = 'Этот адрес электронной почты уже используется. Пожалуйста, вернитесь назад и выберите другой.';
 $MANTIS_ERROR[ERROR_CONFIG_OPT_NOT_FOUND] = 'Параметр конфигурации \'%1$s\' не найден.';
-$MANTIS_ERROR[ERROR_CONFIG_OPT_CANT_BE_SET_IN_DB] = 'Параметр конфигурации \'%1$s\' нельзя устанавливать в базе данных. Его следует установить в config_inc.php.';
+$MANTIS_ERROR[ERROR_CONFIG_OPT_CANT_BE_SET_IN_DB] = 'Параметр конфигурации "%1$s" не может быть задан в базе данных. Он должен быть определен в config_inc.php.';
 $MANTIS_ERROR[ERROR_CONFIG_OPT_BAD_SYNTAX] = 'Не удалось установить настройки параметра «%1$s»: %2$s';
 $MANTIS_ERROR[ERROR_LANG_STRING_NOT_FOUND] = 'Строка «%1$s» не найдена.';
 $MANTIS_ERROR[ERROR_BUGNOTE_NOT_FOUND] = 'Комментарий не найден.';
@@ -1362,7 +1367,7 @@ $MANTIS_ERROR[ERROR_CATEGORY_DUPLICATE] = 'Категория с этим наз
 $MANTIS_ERROR[ERROR_NO_COPY_ACTION] = 'Действие по копированию не определено.';
 $MANTIS_ERROR[ERROR_CATEGORY_NOT_FOUND] = 'Категория не найдена.';
 $MANTIS_ERROR[ERROR_CATEGORY_NOT_FOUND_FOR_PROJECT] = 'В проекте "%2$s" категория "%1$s" не обнаружена.';
-$MANTIS_ERROR[ERROR_CATEGORY_CANNOT_DELETE_DEFAULT] = 'Эту категорию нельзя удалить, так как она определена как "Категория для перемещений по умолчанию".';
+$MANTIS_ERROR[ERROR_CATEGORY_CANNOT_UPDATE_DEFAULT] = 'Операцию невозможно завершить, поскольку категория «%1$s» определена как используемая по умолчанию для перемещений хотя бы в одном проекте или же глобально.';
 $MANTIS_ERROR[ERROR_CATEGORY_CANNOT_DELETE_HAS_ISSUES] = 'Категория "%1$s" не может быть удалена, потому что она связана с одним или более вопросами.';
 $MANTIS_ERROR[ERROR_VERSION_DUPLICATE] = 'Версия с таким названием уже существует.';
 $MANTIS_ERROR[ERROR_VERSION_NOT_FOUND] = 'Версия \'%1$s\' не найдена.';
@@ -1429,6 +1434,7 @@ $MANTIS_ERROR[ERROR_API_TOKEN_NAME_NOT_UNIQUE] = 'Имя API token "%s" уже �
 $MANTIS_ERROR[ERROR_LOGFILE_NOT_WRITABLE] = 'Файл, указанный в переменной $g_log_destination "%s", недоступен для записи.';
 $MANTIS_ERROR[ERROR_MONITOR_ACCESS_TOO_LOW] = 'Добавленный пользователь не имеет достаточных прав доступа для отслеживания этой задачи.';
 $MANTIS_ERROR[ERROR_USER_TOKEN_NOT_FOUND] = 'Токен пользовательского API с идентификатором «%d» не найден.';
+$MANTIS_ERROR[ERROR_GRAPH_TOOL_NOT_FOUND] = 'Инструмент Graphviz "%s" не найден или произошел сбой при запуске. Убедитесь, что библиотека установлена и $g_graphviz_path задан правильно.';
 $s_dropzone_default_message = 'Добавьте файлы перетащив их или выделив и вставив.';
 $s_dropzone_fallback_message = 'Ваш браузер не поддерживает загрузку файлов через перетаскивание.';
 $s_dropzone_file_too_big = 'Файл слишком большой ({{filesize}} MiB). Максимальный размер файла: {{maxFilesize}} MiB.';
@@ -1462,3 +1468,7 @@ $s_move = 'Переместить';
 $s_close = 'Закрыть';
 $s_add = 'Добавить';
 $s_login = 'Вход';
+$s_filter_all = 'Все';
+$s_filter_new = 'Новые';
+$s_filter_unused_tags = 'Неиспользуемые';
+$s_filter_unused = 'Неиспользуемые';

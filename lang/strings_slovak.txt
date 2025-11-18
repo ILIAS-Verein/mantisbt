@@ -46,6 +46,7 @@
  * @author Llucenic
  * @author Mikulas1
  * @author Nathaniel.skywalker.888
+ * @author Oujon
  * @author Rattkin
  * @author Rudko
  * @author Teslaton
@@ -126,6 +127,7 @@ $s_inherit = 'Zdediť kategórie';
 $s_inherit_global = 'Zdediť globálne kategórie';
 $s_inherit_parent = 'Zdediť rodičovské kategórie';
 $s_update_subproject_inheritance = 'Upraviť dedičnosť podprojektov';
+$s_category_disabled = 'Kategória je zakázaná, vyberte si inú.';
 $s_duplicate_of = 'duplikát z';
 $s_has_duplicate = 'má duplikát';
 $s_related_to = 'súvisiace';
@@ -492,12 +494,10 @@ $s_log_page_time = 'Čas realizácie';
 $s_log_page_caller = 'Volajúci';
 $s_log_page_event = 'Udalosť';
 $s_please_report = 'Nahláste to %1$s.';
-$s_warning_plain_password_authentication = '<strong>Varovanie:</strong> Používa sa autentizácia pomocou hesla v čitateľnej podobe, Vaše heslá sa zobrazia administrátorom.';
 $s_warning_default_administrator_account_present = '<strong>Varovanie:</strong> Základný účet \'administrator\' by mal byť deaktivovaný alebo jeho heslo by malo byť zmenené.';
 $s_warning_admin_directory_present = '<strong>Varovanie:</strong> Adresár administrátora by mal byť vymazaný, alebo prístup do neho obmedzený.';
 $s_warning_change_setting = '<strong>Varovanie:</strong> "%1$s" nie je nastavená na predvolenú hodnotu (%2$s).';
 $s_warning_security_hazard = 'Toto je potenciálne bezpečnostné nebezpečenstvo, hrozí možnosť vystavenia citlivých informácií.';
-$s_warning_integrity_hazard = 'Toto môže spôsobiť, že MantisBT bude pokračovať napriek objaveným chybám čo môže spôsobiť problémy s integritou systémových údajov.';
 $s_warning_debug_email = '<strong>Varovanie:</strong> "<code>debug_email</code>" nie je nastavený na <code>VYPNUTÝ</code>, všetky oznámenia, e-maily, ktoré budú zaslané na "%1$s".';
 $s_error_database_no_schema_version = '<strong>Chyba:</strong> Vaša verzia databázovej štruktúry 0. To sa stalo pretože je buď Vaša databáza poškodená, alebo verziu databázy nejde načítať z konfiguračnej tabuľky, alebo databázová štruktúra je zo zastaranej verzie MantisBT.';
 $s_error_database_version_out_of_date_2 = '<strong>Varovanie:</strong> Štruktúra databázy môže byť zastaraná. Pred prihlásením ju prosím, aktualizujte <a href="admin/install.php">tu</a>.';
@@ -754,9 +754,6 @@ $s_delete_user_button = 'Zmazať používateľa';
 $s_impersonate_user_button = 'Vydávať sa za používateľa';
 $s_reset_password_msg = 'Zmena hesla odošle potvrdzovací URL elektronickým dopisom.';
 $s_reset_password_msg2 = 'Nastaviť heslo na prázdne.';
-$s_show_all_users = 'Všetko';
-$s_users_unused = 'Nepoužité';
-$s_users_new = 'Nové';
 $s_account_reset_msg = 'Potvrdzovací dopis bol odoslaný na vašu elektronickú adresu...';
 $s_account_reset_msg2 = 'Heslo k účtu bolo nastavené na prázdne...';
 $s_account_unlock_msg = 'Účet bol odomknutý.';
@@ -1160,10 +1157,6 @@ $s_tags = 'Štítky';
 $s_tag_details = 'Detaily Značky: %1$s';
 $s_tag_id = 'ID Značky';
 $s_tag_name = 'Názov';
-$s_tag_creator = 'Tvorca';
-$s_tag_created = 'Dátum Vytvorenia';
-$s_tag_updated = 'Posledná Zmena';
-$s_tag_description = 'Popis štítku';
 $s_tag_statistics = 'Štatistiky Využitia';
 $s_tag_update = 'Aktualizovať Značku: %1$s';
 $s_tag_update_return = 'Späť na Značku';
@@ -1186,9 +1179,8 @@ $s_tag_history_detached = 'Značka Odpojená';
 $s_tag_history_renamed = 'Značka Premenovaná';
 $s_tag_related = 'Príbuzné Značky';
 $s_tag_related_issues = 'Zdieľané Problémy (%1$s)';
-$s_tag_stats_attached = 'Pripojené problémy: %1$s';
+$s_tag_stats_attached = 'Pripojené problémy';
 $s_tag_create = 'Vytvoriť Značku';
-$s_show_all_tags = 'Všetky';
 $s_time_tracking_billing_link = 'Sledovanie času';
 $s_time_tracking = 'Sledovanie času';
 $s_time_tracking_time_spent = 'Čas strávený:';
@@ -1337,7 +1329,7 @@ $MANTIS_ERROR[ERROR_CATEGORY_DUPLICATE] = 'Kategória s týmyo menom už existuj
 $MANTIS_ERROR[ERROR_NO_COPY_ACTION] = 'Žiadna akcia kopírovania nebola špecifikovaná.';
 $MANTIS_ERROR[ERROR_CATEGORY_NOT_FOUND] = 'Kategória nenájdená.';
 $MANTIS_ERROR[ERROR_CATEGORY_NOT_FOUND_FOR_PROJECT] = 'Kategória \'%1$s\' pre projekt \'%2$s\' nebola nájdená.';
-$MANTIS_ERROR[ERROR_CATEGORY_CANNOT_DELETE_DEFAULT] = 'Táto kategória sa nedá odstrániť, pretože je definovaná ako "Predvolená kategória pre presuny".';
+$MANTIS_ERROR[ERROR_CATEGORY_CANNOT_UPDATE_DEFAULT] = 'Táto kategória sa nedá odstrániť, pretože je definovaná ako "Predvolená kategória pre presuny".';
 $MANTIS_ERROR[ERROR_CATEGORY_CANNOT_DELETE_HAS_ISSUES] = 'Kategória %1$s nemôže byť vymazaná, pretože je napojená na jeden, alebo viac problémov.';
 $MANTIS_ERROR[ERROR_VERSION_DUPLICATE] = 'Verzia s týmyo menom už existuje.';
 $MANTIS_ERROR[ERROR_VERSION_NOT_FOUND] = 'Verzia „%1$s“ nenájdená.';
@@ -1436,3 +1428,7 @@ $s_move = 'Presunúť';
 $s_close = 'Zatvoriť';
 $s_add = 'Pridať';
 $s_login = 'Prihlásenie';
+$s_filter_all = 'Všetko';
+$s_filter_new = 'Nové';
+$s_filter_unused_tags = 'Nepoužité';
+$s_filter_unused = 'Nepoužité';

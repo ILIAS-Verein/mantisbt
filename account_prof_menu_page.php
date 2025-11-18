@@ -201,7 +201,7 @@ if( $g_global_profiles ) {
 					print_form_button(
 						'account_prof_update.php',
 						lang_get( $t_is_default_profile ? 'clear_default' : 'make_default' ),
-						array_merge( $t_param, array( 'action' => 'make_default' ) ),
+						array_merge( $t_param, array( 'action' => 'change_default' ) ),
 						$t_security_token
 					);
 					echo '</div>';
@@ -301,7 +301,9 @@ if( $g_global_profiles ) {
 									<td>
 									<textarea  id="description" name="description"
 											   class="form-control"
-											   cols="80" rows="8"></textarea>
+											   cols="80" rows="8"
+											   maxlength="<?php echo config_get_global( 'max_textarea_length' ) ?>"
+									></textarea>
 									</td>
 								</tr>
 							</table>

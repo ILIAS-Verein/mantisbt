@@ -23,11 +23,10 @@
  * @link http://www.mantisbt.org
  */
 
-/**
- * Includes
- */
-require_once 'MantisCoreBase.php';
+namespace Mantis\tests\Mantis;
 
+use ConfigParser;
+use Exception;
 use PHPUnit\Framework\Constraint\IsType;
 
 
@@ -41,7 +40,7 @@ use PHPUnit\Framework\Constraint\IsType;
  * @package    Tests
  * @subpackage ConfigParser
  */
-class MantisConfigParserTest extends MantisCoreBase {
+class ConfigParserTest extends MantisCoreBase {
 
 	/**
 	 * Test with empty string or null
@@ -90,12 +89,12 @@ class MantisConfigParserTest extends MantisCoreBase {
 		# Check that the parsed array matches the model array
 		$t_parser = new ConfigParser( $p_string );
 		$t_parsed_1 = $t_parser->parse();
-		$this->assertEquals( $t_parsed_1, $t_reference_result, $this->errorMessage( $p_string )  );
+		$this->assertEquals(  $t_reference_result, $t_parsed_1, $this->errorMessage( $p_string )  );
 
 		# Export converted array and parse again: result should match the model
 		$t_parser = new ConfigParser( var_export( $t_parsed_1 , true ) );
 		$t_parsed_2 = $t_parser->parse();
-		$this->assertEquals( $t_parsed_2, $t_reference_result, $this->errorMessage( $p_string )  );
+		$this->assertEquals(  $t_reference_result, $t_parsed_2, $this->errorMessage( $p_string )  );
 	}
 
 	/**
@@ -122,11 +121,11 @@ class MantisConfigParserTest extends MantisCoreBase {
 	public function testExtraTokensIgnore() {
 		$t_parser = new ConfigParser( '1; 2' );
 		$t_result = $t_parser->parse( ConfigParser::EXTRA_TOKENS_IGNORE );
-		$this->assertEquals( $t_result, 1 );
+		$this->assertEquals( 1, $t_result);
 
 		$t_parser = new ConfigParser( 'array(); 2' );
 		$t_result = $t_parser->parse( ConfigParser::EXTRA_TOKENS_IGNORE );
-		$this->assertEquals( $t_result, array() );
+		$this->assertEquals( array(), $t_result);
 	}
 
 	/**
@@ -201,7 +200,7 @@ class MantisConfigParserTest extends MantisCoreBase {
 	 *   <test case> => array( <string to test>, <expected type> )
 	 * @return array
 	 */
-	public function providerScalarTypes() {
+	public static function providerScalarTypes() {
 		return array(
 			'Integer Zero' => array( '0', IsType::TYPE_INT ),
 			'Integer One' => array( '1', IsType::TYPE_INT ),
@@ -242,7 +241,7 @@ class MantisConfigParserTest extends MantisCoreBase {
 	 * @return array
 	 * Initialize the array test cases list
 	 */
-	public function providerArrays() {
+	public static function providerArrays() {
 		/**
 		 * Template for new test cases
 		 * ---------------------------

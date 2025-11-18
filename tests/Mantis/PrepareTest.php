@@ -23,13 +23,12 @@
  * @link http://www.mantisbt.org
  */
 
-# Includes
-require_once 'MantisCoreBase.php';
+namespace Mantis\tests\Mantis;
 
 /**
  * MantisBT Prepare API test cases
  */
-class MantisPrepareTest extends MantisCoreBase {
+class PrepareTest extends MantisCoreBase {
 	const EMAIL = 'test@example.com';
 
 	/**
@@ -49,7 +48,7 @@ class MantisPrepareTest extends MantisCoreBase {
 	 * Data provider for prepare_mailto_url() test
 	 * @return array
 	 */
-	public function providerMailTo() {
+	public static function providerMailTo() {
 		$t_test_data = array(
 			'Basic' => array( array( self::EMAIL, ''), 'mailto:' . self::EMAIL ),
 			'Subject' => array( array( self::EMAIL, 'subject'), 'mailto:' . self::EMAIL . '?subject=subject' ),
@@ -87,7 +86,7 @@ class MantisPrepareTest extends MantisCoreBase {
 	 * @see testEmailLink
 	 * @return array
 	 */
-	public function providerEmailLink() {
+	public static function providerEmailLink() {
 		$t_email = self::EMAIL;
 		$t_text = 'Link Text';
 		$t_tooltip = 'Tooltip';

@@ -31,6 +31,9 @@
  * @uses lang_api.php
  */
 
+use Mantis\Exceptions\ClientException;
+use Mantis\Exceptions\MantisException;
+
 require_api( 'compress_api.php' );
 require_api( 'config_api.php' );
 require_api( 'constant_inc.php' );
@@ -39,7 +42,25 @@ require_api( 'html_api.php' );
 require_api( 'lang_api.php' );
 
 $g_error_parameters = array();
+
+/**
+ * Determine if inline warnings should be printed immediately (true)
+ * or at page bottom (false).
+ *
+ * True initially, layout API sets it to false when the page header has been
+ * printed. Call {@see error_delay_reporting()} to change this value.
+ *
+ * @see error_log_delayed(), error_print_delayed()
+ * @global bool $g_error_delay_reporting
+ */
+$g_error_delay_reporting = true;
+
+/**
+ * List of delayed error messages to be printed at page bottom.
+ * @global array $g_errors_delayed
+ */
 $g_errors_delayed = array();
+
 $g_error_handled = false;
 $g_error_proceed_url = null;
 $g_error_send_page_header = true;
@@ -62,7 +83,7 @@ $g_exception = null;
 /**
  * Unhandled exception handler
  *
- * @param \Mantis\Exceptions\MantisException|Exception|Error $p_exception The exception to handle
+ * @param MantisException|Exception|Error $p_exception The exception to handle
  * @return void
  */
 function error_exception_handler( $p_exception ) {
@@ -95,7 +116,8 @@ function error_exception_handler( $p_exception ) {
 /**
  * Get error stack based on last exception
  *
- * @param Exception|null $p_exception The exception to print stack trace for.  Null will check last seen exception.
+ * @param Exception|null $p_exception The exception to print stack trace for.
+ *                                    Null will check last seen exception.
  * @return array The stack trace as an array
  */
 function error_stack_trace( $p_exception = null ) {
@@ -119,18 +141,19 @@ function error_stack_trace( $p_exception = null ) {
 /**
  * Default error handler.
  *
- * This handler will not receive E_ERROR, E_PARSE, E_CORE_*, or E_COMPILE_*
- * errors.
+ * This handler will not receive E_ERROR, E_PARSE, E_CORE_*, or E_COMPILE_* errors.
  *
- * @internal
- * @param integer    $p_type  Contains the level of the error raised, as an integer.
+ * @param int        $p_type  Contains the level of the error raised, as an integer.
  * @param int|string $p_error For Mantis internal errors (i.e. of type E_USER_*),
  *                            contains the error number (see ERROR_* constants);
  *                            otherwise (system errors), the error message as a string.
  * @param string     $p_file  Contains the filename that the error was raised in, as a string.
- * @param integer    $p_line  Contains the line number the error was raised at, as an integer.
- * @return void
+ * @param int        $p_line  Contains the line number the error was raised at, as an integer.
  *
+ * @return void
+ * @throws ClientException
+ *
+ * @internal
  * @uses lang_api.php
  * @uses config_api.php
  * @uses compress_api.php
@@ -166,15 +189,7 @@ function error_handler( $p_type, $p_error, $p_file, $p_line ) {
 	}
 
 	$t_method_array = config_get_global( 'display_errors' );
-	if( isset( $t_method_array[$p_type] ) ) {
-		$t_method = $t_method_array[$p_type];
-	} else {
-		if( isset( $t_method_array[E_ALL] ) ) {
-			$t_method = $t_method_array[E_ALL];
-		} else {
-			$t_method = 'none';
-		}
-	}
+	$t_method = $t_method_array[$p_type] ?? $t_method_array[E_ALL] ?? 'none';
 
 	$t_show_detailed_errors = config_get_global( 'show_detailed_errors' ) == ON;
 
@@ -207,15 +222,19 @@ function error_handler( $p_type, $p_error, $p_file, $p_line ) {
 	# build an appropriate error string
 	$t_error_location = 'in \'' . $p_file .'\' line ' . $p_line;
 	$t_error_description = '\'' . $p_error . '\' ' . $t_error_location;
+
+	# PHP 8.4 compatibility, deprecation of E_STRICT constant
+	# Treat such errors as E_NOTICE
+	if( PHP_VERSION_ID < 80000 && $p_type == E_STRICT ) {
+		$p_type = E_NOTICE;
+	}
+
 	switch( $p_type ) {
 		case E_WARNING:
 			$t_error_type = 'SYSTEM WARNING';
 			break;
 		case E_NOTICE:
 			$t_error_type = 'SYSTEM NOTICE';
-			break;
-		case E_STRICT:
-			$t_error_type = 'STRICT NOTICE';
 			break;
 		case E_RECOVERABLE_ERROR:
 			# This should generally be considered fatal (like E_ERROR)
@@ -262,20 +281,14 @@ function error_handler( $p_type, $p_error, $p_file, $p_line ) {
 				. ' (in ' . $t_caller['file']
 				. ' line ' . $t_caller['line'] . ')';
 
-			if( $t_method == DISPLAY_ERROR_INLINE && php_sapi_name() != 'cli' ) {
-				error_log_delayed( $t_error_description );
-				$g_error_handled = true;
-				return;
-			}
+			error_delay_reporting();
 			break;
 		default:
 			# shouldn't happen, just display the error just in case
 			$t_error_type = 'UNHANDLED ERROR TYPE (' .
-				'<a href="http://php.net/errorfunc.constants">' . $p_type. '</a>)';
+				'<a href="https://www.php.net/errorfunc.constants">' . $p_type. '</a>)';
 			$t_error_description = $p_error . ' (' . $t_error_location . ')';
 	}
-
-	$t_error_description = nl2br( $t_error_description );
 
 	if( php_sapi_name() == 'cli' ) {
 		if( DISPLAY_ERROR_NONE != $t_method ) {
@@ -290,6 +303,8 @@ function error_handler( $p_type, $p_error, $p_file, $p_line ) {
 			exit(1);
 		}
 	} else {
+		$t_error_description = nl2br( $t_error_description );
+
 		switch( $t_method ) {
 			case DISPLAY_ERROR_HALT:
 				# disable any further event callbacks
@@ -318,10 +333,15 @@ function error_handler( $p_type, $p_error, $p_file, $p_line ) {
 					ob_clean();
 				}
 
-				# If HTML error output was disabled, set an error header and stop
+
+				# If HTML error output was disabled, set the HTTP response code and stop
 				if( defined( 'DISABLE_INLINE_ERROR_REPORTING' ) ) {
-					# @TODO Have a mapping for mantis error codes to appropriate HTTP error codes
-					header( ' ', true, 400 );
+					if( DISABLE_INLINE_ERROR_REPORTING == 'text' ) {
+						# Send error message as response body
+						header( 'Content-Type: text/plain' );
+						echo $t_error_description;
+					}
+					http_response_code( error_map_mantis_error_to_http_code( $p_error ) );
 					exit(1);
 				}
 
@@ -329,12 +349,12 @@ function error_handler( $p_type, $p_error, $p_file, $p_line ) {
 				if( $g_error_send_page_header ) {
 					if( $t_html_api ) {
 						layout_page_header();
-						if( $p_error != ERROR_DB_QUERY_FAILED && $t_db_connected == true ) {
+						if( $p_error != ERROR_DB_QUERY_FAILED && $t_db_connected ) {
 							if( auth_is_user_authenticated() ) {
 								layout_page_begin();
 							} else {
-								layout_navbar();
-								layout_main_container_begin();
+								# The simpler layout to avoid the possible endless redirect loop
+								layout_admin_page_begin();
 							}
 						}
 					} else {
@@ -381,12 +401,11 @@ function error_handler( $p_type, $p_error, $p_file, $p_line ) {
 				}
 
 				if( $t_html_api ) {
-					if( $p_error != ERROR_DB_QUERY_FAILED && $t_db_connected == true ) {
+					if( $p_error != ERROR_DB_QUERY_FAILED && $t_db_connected ) {
 						if( auth_is_user_authenticated() ) {
 							layout_page_end();
 						} else {
-							layout_main_container_end();
-							layout_footer();
+							layout_admin_page_end();
 						}
 					} else {
 						layout_body_javascript();
@@ -396,11 +415,19 @@ function error_handler( $p_type, $p_error, $p_file, $p_line ) {
 				} else {
 					echo '</body></html>', "\n";
 				}
+
+				# Return proper HTTP status code for error
+				http_response_code( error_map_mantis_error_to_http_code( $p_error ) );
 				exit(1);
 
 			case DISPLAY_ERROR_INLINE:
 				if( !defined( 'DISABLE_INLINE_ERROR_REPORTING' ) ) {
-					echo '<div class="alert alert-warning">', $t_error_type, ': ', $t_error_description, '</div>';
+					global $g_error_delay_reporting;
+					if( $g_error_delay_reporting ) {
+						error_log_delayed( $t_error_type . ': ' . $t_error_description );
+					} else {
+						echo '<div class="alert alert-warning">', $t_error_type, ': ', $t_error_description, '</div>';
+					}
 				}
 				$g_error_handled = true;
 				break;
@@ -421,13 +448,16 @@ function error_handler( $p_type, $p_error, $p_file, $p_line ) {
 
 /**
  * Error handler to convert PHP errors to Exceptions.
+ *
  * This is used to temporarily override the default error handler, when it is
  * required to catch a PHP error (e.g. when unserializing data in install
  * helper functions).
- * @param integer $p_type    Level of the error raised.
- * @param string  $p_error   Error message.
- * @param string  $p_file    Filename that the error was raised in.
- * @param integer $p_line    Line number the error was raised at.
+ *
+ * @param int    $p_type    Level of the error raised.
+ * @param string $p_error   Error message.
+ * @param string $p_file    Filename that the error was raised in.
+ * @param int    $p_line    Line number the error was raised at.
+ *
  * @throws ErrorException
  */
 function error_convert_to_exception( $p_type, $p_error, $p_file, $p_line ) {
@@ -435,7 +465,25 @@ function error_convert_to_exception( $p_type, $p_error, $p_file, $p_line ) {
 }
 
 /**
+ * Instruct the error handler to delay display of inline warnings.
+ *
+ * This should be called prior to trigger_error() when required, e.g. when
+ * a warning could be triggered before the page layout has been sent.
+ *
+ * @param bool $p_delay If true (default), inline warnings will be logged and
+ *                      display at the end of the page instead of being printed
+ *                      immediately.
+ *
+ * @return void
+ */
+function error_delay_reporting( bool $p_delay = true) {
+	global $g_error_delay_reporting;
+	$g_error_delay_reporting = $p_delay;
+}
+
+/**
  * Enqueues an error message for later display.
+ *
  * @see error_print_delayed()
  *
  * @param string $p_message Error message
@@ -449,9 +497,11 @@ function error_log_delayed( $p_message ) {
 
 /**
  * Prints messages from the delayed errors queue.
+ *
  * The error handler enqueues deprecation warnings that would be printed inline,
  * to avoid display issues when they are triggered within html tags. Only unique
  * messages are printed.
+ *
  * @return void
  */
 function error_print_delayed() {
@@ -467,12 +517,17 @@ function error_print_delayed() {
 
 		$g_errors_delayed = array();
 	}
+
+	# Make sure any subsequent inline errors are displayed
+	error_delay_reporting( false );
 }
 
 /**
- * Print out the error details
- * @param string  $p_file    File error occurred in.
- * @param integer $p_line    Line number error occurred on.
+ * Print out the error details.
+ *
+ * @param string $p_file File error occurred in.
+ * @param int    $p_line Line number error occurred on.
+ *
  * @return void
  */
 function error_print_details( $p_file, $p_line ) {
@@ -498,7 +553,9 @@ function error_print_details( $p_file, $p_line ) {
 /**
  * Get the stack trace as a string that can be logged or echoed to CLI output.
  *
- * @param Exception|null $p_exception The exception to print stack trace for.  Null will check last seen exception.
+ * @param Exception|null $p_exception The exception to print stack trace for.
+ *                                    Null will check last seen exception.
+ *
  * @return string multi-line printout of stack trace.
  */
 function error_stack_trace_as_string( $p_exception = null ) {
@@ -506,14 +563,14 @@ function error_stack_trace_as_string( $p_exception = null ) {
 	$t_output = '';
 
 	foreach( $t_stack as $t_frame ) {
-		$t_output .= ( isset( $t_frame['file'] ) ? $t_frame['file'] : '-' ) . ': ' .
-			( isset( $t_frame['line'] ) ? $t_frame['line'] : '-' ) . ': ' .
-			( isset( $t_frame['class'] ) ? $t_frame['class'] : '-' ) . ' - ' .
-			( isset( $t_frame['type'] ) ? $t_frame['type'] : '-' ) . ' - ' .
-			( isset( $t_frame['function'] ) ? $t_frame['function'] : '-' );
+		$t_output .= ( $t_frame['file'] ?? '-' ) . ': ' .
+			( $t_frame['line'] ?? '-' ) . ': ' .
+			( $t_frame['class'] ?? '-' ) . ' - ' .
+			( $t_frame['type'] ?? '-' ) . ' - ' .
+			( $t_frame['function'] ?? '-' );
 
 		$t_args = array();
-		if( isset( $t_frame['args'] ) && !empty( $t_frame['args'] ) ) {
+		if( !empty( $t_frame['args'] ) ) {
 			foreach( $t_frame['args'] as $t_value ) {
 				$t_args[] = error_build_parameter_string( $t_value );
 			}
@@ -528,9 +585,10 @@ function error_stack_trace_as_string( $p_exception = null ) {
 }
 
 /**
- * Print out a stack trace
+ * Print out a stack trace.
  *
- * @param Exception|null $p_exception The exception to print stack trace for.  Null will check last seen exception.
+ * @param Exception|null $p_exception The exception to print stack trace for.
+ *                                    Null will check last seen exception.
  */
 function error_print_stack_trace( $p_exception = null ) {
 	if( php_sapi_name() == 'cli' ) {
@@ -554,7 +612,7 @@ function error_print_stack_trace( $p_exception = null ) {
 	$t_stack = error_stack_trace( $p_exception );
 
 	foreach( $t_stack as $t_id => $t_frame ) {
-		if( isset( $t_frame['args'] ) && !empty( $t_frame['args'] ) ) {
+		if( !empty( $t_frame['args'] ) ) {
 			$t_args = array();
 			foreach( $t_frame['args'] as $t_value ) {
 				$t_args[] = error_build_parameter_string( $t_value );
@@ -567,10 +625,10 @@ function error_print_stack_trace( $p_exception = null ) {
 			"<tr>\n" . str_repeat( "<td>%s</td>\n", 7 ) . "</tr>\n",
 			$t_id,
 			isset( $t_frame['file'] ) ? htmlentities( $t_frame['file'], ENT_COMPAT, 'UTF-8' ) : '-',
-			isset( $t_frame['line'] ) ? $t_frame['line'] : '-',
-			isset( $t_frame['class'] ) ? $t_frame['class'] : '-',
-			isset( $t_frame['type'] ) ? $t_frame['type'] : '-',
-			isset( $t_frame['function'] ) ? $t_frame['function'] : '-',
+			$t_frame['line'] ?? '-',
+			$t_frame['class'] ?? '-',
+			$t_frame['type'] ?? '-',
+			$t_frame['function'] ?? '-',
 			htmlentities( implode( ', ', $t_args ), ENT_COMPAT, 'UTF-8' )
 		);
 
@@ -579,10 +637,12 @@ function error_print_stack_trace( $p_exception = null ) {
 }
 
 /**
- * Build a string describing the parameters to a function
+ * Build a string describing the parameters to a function.
+ *
  * @param string|array|object $p_param    Parameter.
- * @param boolean             $p_showtype Default true.
- * @param integer             $p_depth    Default 0.
+ * @param bool                $p_showtype Default true.
+ * @param int                 $p_depth    Default 0.
+ *
  * @return string
  */
 function error_build_parameter_string( $p_param, $p_showtype = true, $p_depth = 0 ) {
@@ -620,7 +680,9 @@ function error_build_parameter_string( $p_param, $p_showtype = true, $p_depth = 
 
 /**
  * Return an error string (in the current language) for the given error.
- * @param integer $p_error Error string to localize.
+ *
+ * @param int $p_error Error string to localize.
+ *
  * @return string
  * @access public
  */
@@ -628,6 +690,7 @@ function error_string( $p_error ) {
 	global $g_error_parameters;
 
 	$t_lang = null;
+	$t_error = '';
 	while( true ) {
 		$t_err_msg = lang_get( 'MANTIS_ERROR', $t_lang );
 		if( array_key_exists( $p_error, $t_err_msg ) ) {
@@ -643,6 +706,13 @@ function error_string( $p_error ) {
 			array_unshift( $g_error_parameters, $p_error );
 			break;
 		}
+	}
+
+	# Special handling for generic error type
+	# Append detailed error information if a parameter has been provided.
+	if( $p_error == ERROR_GENERIC && $g_error_parameters ) {
+		$t_error .= PHP_EOL . error_string( ERROR_GENERIC_DETAILS );
+		$g_error_parameters = [];
 	}
 
 	# Prepare error parameters for display
@@ -666,9 +736,9 @@ function error_string( $p_error ) {
 }
 
 /**
- * Check if we have handled an error during this page
- * Return true if an error has been handled, false otherwise
- * @return boolean
+ * Check if we have handled an error during this page.
+ *
+ * @return bool True if an error has been handled, false otherwise
  */
 function error_handled() {
 	global $g_error_handled;
@@ -677,14 +747,17 @@ function error_handled() {
 }
 
 /**
- * Set additional info parameters to be used when displaying the next error
- * This function takes a variable number of parameters
+ * Set additional info parameters to be used when displaying the next error.
+ *
+ * This function takes a variable number of parameters.
  *
  * When writing internationalized error strings, note that you can change the
- *  order of parameters in the string.  See the PHP manual page for the
- *  sprintf() function for more details.
- * @access public
+ * order of parameters in the string.  See the PHP manual page for the
+ * sprintf() function for more details.
+ *
  * @return void
+ *
+ * @access public
  */
 function error_parameters() {
 	global $g_error_parameters;
@@ -693,10 +766,13 @@ function error_parameters() {
 }
 
 /**
- * Set a URL to give to the user to proceed after viewing the error
- * @access public
+ * Set a URL to give to the user to proceed after viewing the error.
+ *
  * @param string $p_url URL given to user after viewing the error.
+ *
  * @return void
+ *
+ * @access public
  */
 function error_proceed_url( $p_url ) {
 	global $g_error_proceed_url;
@@ -704,3 +780,129 @@ function error_proceed_url( $p_url ) {
 	$g_error_proceed_url = $p_url;
 }
 
+
+/**
+ * Maps MantisBT errors to the appropriate HTTP status code.
+ *
+ * @param int $p_error MantisBT error code (ERROR_xxx constant).
+ *
+ * @return int HTTP status code.
+ */
+function error_map_mantis_error_to_http_code( $p_error ) {
+	switch( $p_error ) {
+		case ERROR_NO_FILE_SPECIFIED:
+		case ERROR_FILE_DISALLOWED:
+		case ERROR_DUPLICATE_PROJECT:
+		case ERROR_EMPTY_FIELD:
+		case ERROR_INVALID_REQUEST_METHOD:
+		case ERROR_INVALID_SORT_FIELD:
+		case ERROR_INVALID_DATE_FORMAT:
+		case ERROR_INVALID_RESOLUTION:
+		case ERROR_FIELD_TOO_LONG:
+		case ERROR_CONFIG_OPT_NOT_FOUND:
+		case ERROR_CONFIG_OPT_CANT_BE_SET_IN_DB:
+		case ERROR_CONFIG_OPT_BAD_SYNTAX:
+		case ERROR_GPC_VAR_NOT_FOUND:
+		case ERROR_GPC_ARRAY_EXPECTED:
+		case ERROR_GPC_ARRAY_UNEXPECTED:
+		case ERROR_GPC_NOT_NUMBER:
+		case ERROR_FILE_TOO_BIG:
+		case ERROR_FILE_NOT_ALLOWED:
+		case ERROR_FILE_DUPLICATE:
+		case ERROR_FILE_NO_UPLOAD_FAILURE:
+		case ERROR_PROJECT_NAME_NOT_UNIQUE:
+		case ERROR_PROJECT_NAME_INVALID:
+		case ERROR_PROJECT_RECURSIVE_HIERARCHY:
+		case ERROR_USER_NAME_NOT_UNIQUE:
+		case ERROR_USER_CREATE_PASSWORD_MISMATCH:
+		case ERROR_USER_NAME_INVALID:
+		case ERROR_USER_DOES_NOT_HAVE_REQ_ACCESS:
+		case ERROR_USER_CHANGE_LAST_ADMIN:
+		case ERROR_USER_REAL_NAME_INVALID:
+		case ERROR_USER_EMAIL_NOT_UNIQUE:
+		case ERROR_BUG_DUPLICATE_SELF:
+		case ERROR_BUG_RESOLVE_DEPENDANTS_BLOCKING:
+		case ERROR_BUG_CONFLICTING_EDIT:
+		case ERROR_EMAIL_INVALID:
+		case ERROR_EMAIL_DISPOSABLE:
+		case ERROR_CUSTOM_FIELD_NAME_NOT_UNIQUE:
+		case ERROR_CUSTOM_FIELD_IN_USE:
+		case ERROR_CUSTOM_FIELD_INVALID_VALUE:
+		case ERROR_CUSTOM_FIELD_INVALID_DEFINITION:
+		case ERROR_CUSTOM_FIELD_NOT_LINKED_TO_PROJECT:
+		case ERROR_CUSTOM_FIELD_INVALID_PROPERTY:
+		case ERROR_CATEGORY_DUPLICATE:
+		case ERROR_NO_COPY_ACTION:
+		case ERROR_CATEGORY_NOT_FOUND_FOR_PROJECT:
+		case ERROR_VERSION_DUPLICATE:
+		case ERROR_SPONSORSHIP_NOT_ENABLED:
+		case ERROR_SPONSORSHIP_AMOUNT_TOO_LOW:
+		case ERROR_SPONSORSHIP_SPONSOR_NO_EMAIL:
+		case ERROR_RELATIONSHIP_SAME_BUG:
+		case ERROR_LOST_PASSWORD_CONFIRM_HASH_INVALID:
+		case ERROR_LOST_PASSWORD_NO_EMAIL_SPECIFIED:
+		case ERROR_LOST_PASSWORD_NOT_MATCHING_DATA:
+		case ERROR_SIGNUP_NOT_MATCHING_CAPTCHA:
+		case ERROR_TAG_DUPLICATE:
+		case ERROR_TAG_NAME_INVALID:
+		case ERROR_TAG_NOT_ATTACHED:
+		case ERROR_TAG_ALREADY_ATTACHED:
+		case ERROR_COLUMNS_DUPLICATE:
+		case ERROR_COLUMNS_INVALID:
+		case ERROR_API_TOKEN_NAME_NOT_UNIQUE:
+		case ERROR_INVALID_FIELD_VALUE:
+		case ERROR_PROJECT_SUBPROJECT_DUPLICATE:
+		case ERROR_PROJECT_SUBPROJECT_NOT_FOUND:
+			return HTTP_STATUS_BAD_REQUEST;
+
+		case ERROR_BUG_NOT_FOUND:
+		case ERROR_FILE_NOT_FOUND:
+		case ERROR_BUGNOTE_NOT_FOUND:
+		case ERROR_PROJECT_NOT_FOUND:
+		case ERROR_USER_PREFS_NOT_FOUND:
+		case ERROR_USER_PROFILE_NOT_FOUND:
+		case ERROR_USER_BY_NAME_NOT_FOUND:
+		case ERROR_USER_BY_ID_NOT_FOUND:
+		case ERROR_USER_BY_EMAIL_NOT_FOUND:
+		case ERROR_USER_BY_REALNAME_NOT_FOUND:
+		case ERROR_NEWS_NOT_FOUND:
+		case ERROR_BUG_REVISION_NOT_FOUND:
+		case ERROR_CUSTOM_FIELD_NOT_FOUND:
+		case ERROR_CATEGORY_NOT_FOUND:
+		case ERROR_VERSION_NOT_FOUND:
+		case ERROR_SPONSORSHIP_NOT_FOUND:
+		case ERROR_RELATIONSHIP_NOT_FOUND:
+		case ERROR_FILTER_NOT_FOUND:
+		case ERROR_TAG_NOT_FOUND:
+		case ERROR_TOKEN_NOT_FOUND:
+		case ERROR_USER_TOKEN_NOT_FOUND:
+			return HTTP_STATUS_NOT_FOUND;
+
+		case ERROR_ACCESS_DENIED:
+		case ERROR_PROTECTED_ACCOUNT:
+		case ERROR_HANDLER_ACCESS_TOO_LOW:
+		case ERROR_USER_CURRENT_PASSWORD_MISMATCH:
+		case ERROR_AUTH_INVALID_COOKIE:
+		case ERROR_BUG_READ_ONLY_ACTION_DENIED:
+		case ERROR_LDAP_AUTH_FAILED:
+		case ERROR_LDAP_USER_NOT_FOUND:
+		case ERROR_SPONSORSHIP_HANDLER_ACCESS_LEVEL_TOO_LOW:
+		case ERROR_SPONSORSHIP_ASSIGNER_ACCESS_LEVEL_TOO_LOW:
+		case ERROR_RELATIONSHIP_ACCESS_LEVEL_TO_DEST_BUG_TOO_LOW:
+		case ERROR_LOST_PASSWORD_NOT_ENABLED:
+		case ERROR_LOST_PASSWORD_MAX_IN_PROGRESS_ATTEMPTS_REACHED:
+		case ERROR_FORM_TOKEN_INVALID:
+			return HTTP_STATUS_FORBIDDEN;
+
+		case ERROR_SPAM_SUSPECTED:
+			return HTTP_STATUS_TOO_MANY_REQUESTS;
+
+		case ERROR_CONFIG_OPT_INVALID:
+		case ERROR_FILE_INVALID_UPLOAD_PATH:
+			# TODO: These are configuration or db state errors.
+			return HTTP_STATUS_INTERNAL_SERVER_ERROR;
+
+		default:
+			return HTTP_STATUS_INTERNAL_SERVER_ERROR;
+	}
+}

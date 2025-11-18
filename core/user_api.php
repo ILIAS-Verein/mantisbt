@@ -210,7 +210,7 @@ function user_update_cache( $p_user_id, $p_field, $p_value ) {
  * @param mixed  $p_value The field value to look for in the cache.
  * @param bool   $p_case_sensitive False to perform case-insensitive search; defaults to true.
  *
- * @return int|bool User Id, false if not found
+ * @return array|bool User Id, false if not found
  */
 function user_search_cache( $p_field, $p_value, $p_case_sensitive = true ) {
 	global $g_cache_user;
@@ -1290,7 +1290,7 @@ function user_get_name_for_sorting_from_row( array $p_user_row ) {
  * @throws ClientException
  */
 function user_get_access_level( $p_user_id, $p_project_id = ALL_PROJECTS ) {
-	$t_access_level = user_get_field( $p_user_id, 'access_level' );
+	$t_access_level = (int)user_get_field( $p_user_id, 'access_level' );
 
 	if( user_is_administrator( $p_user_id ) ) {
 		return $t_access_level;
@@ -1626,27 +1626,24 @@ function user_get_reported_open_bug_count( $p_user_id, $p_project_id = ALL_PROJE
 }
 
 /**
- * Return a profile row.
+ * Return Profile data information.
  *
  * @param int $p_user_id    A valid user identifier.
  * @param int $p_profile_id The profile identifier to retrieve.
  *
- * @return array
+ * @return ProfileData
+ * @throws ClientException if Profile is not found.
  */
-function user_get_profile_row( $p_user_id, $p_profile_id ) {
-	db_param_push();
-	$t_query = 'SELECT * FROM {user_profile}
-				  WHERE id=' . db_param() . ' AND
-						user_id=' . db_param();
-	$t_result = db_query( $t_query, array( $p_profile_id, $p_user_id ) );
-
-	$t_row = db_fetch_array( $t_result );
-
-	if( !$t_row ) {
-		trigger_error( ERROR_USER_PROFILE_NOT_FOUND, ERROR );
+function user_get_profile( $p_user_id, $p_profile_id ) {
+	$t_profile = new ProfileData( $p_profile_id );
+	if( !$t_profile->is_global() && $t_profile->user_id != $p_user_id ) {
+		throw new ClientException(
+			"Profile '$p_profile_id' not found for user '$p_user_id'.",
+			ERROR_USER_PROFILE_NOT_FOUND
+		);
 	}
 
-	return $t_row;
+	return $t_profile;
 }
 
 /**
@@ -1904,8 +1901,10 @@ function user_set_password( $p_user_id, $p_password, $p_allow_protected = false 
 	# When the password is changed, invalidate the cookie to expire sessions that
 	# may be active on all browsers.
 	$c_cookie_string = auth_generate_unique_cookie_string();
+
 	# Delete token for password activation if there is any
 	token_delete( TOKEN_ACCOUNT_ACTIVATION, $p_user_id );
+	token_delete( TOKEN_ACCOUNT_CHANGE_EMAIL, $p_user_id );
 
 	$c_password = auth_process_plain_password( $p_password );
 
@@ -1919,15 +1918,15 @@ function user_set_password( $p_user_id, $p_password, $p_allow_protected = false 
 }
 
 /**
- * Set the user's email after checking that it is valid.
+ * Validate the user's email address.
  *
  * @param int    $p_user_id A valid user identifier.
  * @param string $p_email   An email address to set.
  *
- * @return bool
- * @throws ClientException
+ * @return void
+ * @throws ClientException If mail is not valid.
  */
-function user_set_email( $p_user_id, $p_email ) {
+function user_ensure_email_valid( $p_user_id, $p_email ) {
 	$p_email = trim( $p_email );
 
 	email_ensure_valid( $p_email );
@@ -1937,8 +1936,20 @@ function user_set_email( $p_user_id, $p_email ) {
 	if( strcasecmp( $t_old_email, $p_email ) != 0 ) {
 		user_ensure_email_unique( $p_email );
 	}
+}
 
-	return user_set_field( $p_user_id, 'email', $p_email );
+/**
+ * Set the user's email after checking that it is valid.
+ *
+ * @param int    $p_user_id A valid user identifier.
+ * @param string $p_email   An email address to set.
+ *
+ * @return void
+ * @throws ClientException
+ */
+function user_set_email( $p_user_id, $p_email ) {
+	user_ensure_email_valid( $p_user_id, $p_email );
+	user_set_field( $p_user_id, 'email', $p_email );
 }
 
 /**

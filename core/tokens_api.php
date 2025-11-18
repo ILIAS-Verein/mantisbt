@@ -72,7 +72,7 @@ function token_ensure_exists( $p_token_id ) {
  * Get a token's information
  * @param integer $p_type    The token type to retrieve.
  * @param integer $p_user_id A valid user identifier.
- * @return array Token row
+ * @return array|null Token row
  */
 function token_get( $p_type, $p_user_id = null ) {
 	token_purge_expired_once();
@@ -90,6 +90,21 @@ function token_get( $p_type, $p_user_id = null ) {
 	}
 
 	return null;
+}
+
+/**
+ * Get all tokens of a given type.
+ *
+ * @param int $p_type The token type to retrieve.
+ *
+ * @return array Token rows
+ */
+function token_get_by_type( int $p_type ) {
+	token_purge_expired_once();
+
+	$t_query = new DbQuery();
+	$t_query->sql( 'SELECT * FROM {tokens} WHERE type=' . $t_query->param( $p_type ) );
+	return $t_query->fetch_all();
 }
 
 /**

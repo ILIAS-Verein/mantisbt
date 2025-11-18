@@ -35,6 +35,7 @@
  * @uses lang_api.php
  * @uses print_api.php
  * @uses string_api.php
+ * @uses tokens_api.php
  * @uses utility_api.php
  */
 
@@ -51,6 +52,7 @@ require_api( 'icon_api.php' );
 require_api( 'lang_api.php' );
 require_api( 'print_api.php' );
 require_api( 'string_api.php' );
+require_api( 'tokens_api.php' );
 require_api( 'utility_api.php' );
 
 auth_reauthenticate();
@@ -136,7 +138,7 @@ $t_unused_user_count = $t_row['unused_user_count'];
 
 $t_prefix_array = array();
 
-$t_prefix_array['ALL'] = lang_get( 'show_all_users' );
+$t_prefix_array['ALL'] = lang_get( 'filter_all' );
 
 for( $i = 'A'; $i != 'AA'; $i++ ) {
 	$t_prefix_array[$i] = $i;
@@ -145,8 +147,8 @@ for( $i = 'A'; $i != 'AA'; $i++ ) {
 for( $i = 0; $i <= 9; $i++ ) {
 	$t_prefix_array[(string)$i] = (string)$i;
 }
-$t_prefix_array['UNUSED'] = lang_get( 'users_unused' );
-$t_prefix_array['NEW'] = lang_get( 'users_new' );
+$t_prefix_array['UNUSED'] = lang_get( 'filter_unused' );
+$t_prefix_array['NEW'] = lang_get( 'filter_new' );
 ?>
 
 <div class="col-md-12 col-xs-12">
@@ -306,7 +308,7 @@ $t_user_count = count( $t_users );
 		<div class="pull-left">
 			<?php print_form_button('manage_user_prune.php',
 				lang_get('prune_accounts'),
-				null,
+				[],
 				null,
 				'btn btn-primary btn-sm btn-white btn-round')
 			?>
@@ -359,7 +361,10 @@ $t_user_count = count( $t_users );
 		'username', 'realname', 'email', 'access_level',
 		'enabled', 'protected', 'date_created', 'last_visit'
 	);
-
+	$t_display_failed_login_count = OFF != config_get( 'max_failed_login_count' );
+	if( $t_display_failed_login_count ) {
+		$t_columns[] = 'failed_login_count';
+	}
 	foreach( $t_columns as $t_col ) {
 		echo "\t<th>";
 		print_manage_user_sort_link( 'manage_user_page.php',
@@ -379,6 +384,14 @@ $t_user_count = count( $t_users );
 	$t_duplicate_emails =  config_get_global( 'email_ensure_unique' )
 		? user_get_duplicate_emails()
 		: [];
+
+	# User accounts with an email verification pending (user_id => new email)
+	$t_emails_pending_verification = token_get_by_type( TOKEN_ACCOUNT_CHANGE_EMAIL);
+	$t_emails_pending_verification = array_combine(
+			array_column( $t_emails_pending_verification, 'owner' ),
+			array_column( $t_emails_pending_verification, 'value' )
+		);
+
 	$t_access_level = array();
 	foreach( $t_users as $t_user ) {
 		/**
@@ -423,6 +436,15 @@ $t_user_count = count( $t_users );
 							lang_get( 'email_not_unique' )
 						);
 					}
+
+					# Display warning icon if email is pending verification
+					if( isset( $t_emails_pending_verification[$v_id] ) ) {
+						$t_msg = sprintf( lang_get( 'verify_email_pending' ), $t_emails_pending_verification[$v_id] );
+						print_icon( 'fa-info-circle',
+							'ace-icon bigger-125 blue padding-right-4',
+							string_html_specialchars( $t_msg )
+						);
+					}
 					print_email_link( $v_email, $v_email )
 				?></td>
 				<td><?php echo $t_access_level[$v_access_level] ?></td>
@@ -435,10 +457,11 @@ $t_user_count = count( $t_users );
 					} ?>
 				</td>
 				<td><?php echo $v_date_created ?></td>
-				<td><?php echo $v_last_visit ?></td>
+				<td><?php echo $v_last_visit ?></td><?php if( $t_display_failed_login_count ) { ?>
+				<td><?php echo $v_failed_login_count ?></td><?php } ?>
 			</tr>
 <?php
-	}  # end for
+	}  # end foreach
 ?>
 		</tbody>
 	</table>

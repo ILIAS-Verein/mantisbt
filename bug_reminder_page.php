@@ -144,8 +144,10 @@ layout_page_begin();
 			</select>
 		</td>
 		<td>
-			<textarea name="bugnote_text" cols="65" rows="10"
-					  class="form-control <?php echo $t_bugnote_class; ?>"></textarea>
+			<textarea name="bugnote_text" class="form-control <?php echo $t_bugnote_class; ?>"
+					  cols="65" rows="10"
+					  maxlength="<?php echo config_get_global( 'max_textarea_length' ) ?>"
+			></textarea>
 		</td>
 	</tr>
 </table>
@@ -183,7 +185,7 @@ layout_page_begin();
 $_GET['id'] = $f_bug_id;
 $t_show_page_header = false;
 $t_force_readonly = true;
-$t_mantis_dir = dirname( __FILE__ ) . DIRECTORY_SEPARATOR;
+$t_mantis_dir = __DIR__ . DIRECTORY_SEPARATOR;
 $t_file = __FILE__;
 
 define( 'BUG_VIEW_INC_ALLOW', true );

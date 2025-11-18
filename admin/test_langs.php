@@ -25,7 +25,7 @@
 define( 'PLUGINS_DISABLED', true );
 define( 'LANG_LOAD_DISABLED', true );
 
-$t_mantis_dir = dirname( __FILE__, 2 ) . '/';
+$t_mantis_dir = dirname( __DIR__ ) . '/';
 
 require_once( $t_mantis_dir . 'core.php' );
 
@@ -615,8 +615,7 @@ function checkplugins() {
 
 	foreach( $t_plugins as $t_plugin => $t_path ) {
 		echo PHP_EOL;
-		echo '<tr><th colspan="2">';
-		echo '<a id="plugin-' . $t_plugin . '"></a>';
+		echo '<tr id="plugin-' . $t_plugin . '"><th colspan="2">';
 		echo "Checking language files for plugin <em>$t_plugin</em>";
 		echo '</th></tr>';
 		checklangdir( $t_path );
@@ -635,7 +634,7 @@ function get_plugins( $p_path ) {
 	$t_iter = new CallbackFilterIterator(
 		new FileSystemIterator(
 			$p_path,
-			FileSystemIterator::KEY_AS_FILENAME
+			FileSystemIterator::SKIP_DOTS | FileSystemIterator::KEY_AS_FILENAME
 		),
 		/**
 		 * Callback filter function

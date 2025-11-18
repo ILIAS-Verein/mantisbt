@@ -46,7 +46,9 @@
  * @author DDPAT
  * @author Dovsienko
  * @author Green Zero
+ * @author Gzhegozh
  * @author Ice bulldog
+ * @author Ignatgg
  * @author Igorko
  * @author Macofe
  * @author Movses
@@ -501,12 +503,10 @@ $s_log_page_time = 'Час виконання';
 $s_log_page_caller = 'Гість';
 $s_log_page_event = 'Подія';
 $s_please_report = 'Будь ласка, повідомте про це в %1$s.';
-$s_warning_plain_password_authentication = '<strong>Попередження:</strong> Паролі зберігаються у відкритому вигляді. Це робить ваш пароль видимим для адміністраторів.';
 $s_warning_default_administrator_account_present = '<strong>ПОПЕРЕДЖЕННЯ:</strong> Ви повинні видалити профіль «administrator» або змінити для нього пароль.';
 $s_warning_admin_directory_present = '<strong>Попередження:</strong> Каталог «admin» слід або вилучити, або зробити доступ до нього обмеженим.';
 $s_warning_change_setting = '<strong>Увага:</strong> для «%1$s» не встановлено типове значення (%2$s).';
 $s_warning_security_hazard = 'Це несе потенційну загрозу безпеці, позаяк може призвести до розголошення конфіденційних відомостей.';
-$s_warning_integrity_hazard = 'Це змусить MantisBT продовжувати роботу, коли виникають помилки, і може привести до проблем з цілісністю даних системи.';
 $s_warning_debug_email = '<strong>Увага:</strong> «<code>debug_email</code>» не встановлено <code>OFF</code>, всі поштові події будуть відправлятися «%1$s».';
 $s_error_database_no_schema_version = '<strong>Помилка:</strong> Версія Вашої схеми бази даних — 0. Це може означати, що або база даних пошкоджена, або значення «database_version» не вдалося отримати з таблиці конфігурації, або ж структура бази даних походить із застарілої версії MantisBT (до 1.0.0).';
 $s_error_database_version_out_of_date_2 = '<strong>Попередження:</strong> Структура бази даних, можливо, застаріла. Будь ласка <a href="admin/install.php">зробіть оновлення тут</a> перед тим як продовжити.';
@@ -764,9 +764,6 @@ $s_delete_user_button = 'Видалити користувача';
 $s_impersonate_user_button = 'Розкрити користувача';
 $s_reset_password_msg = 'Скидання паролю надсилає посилання для підтвердження електронною поштою.';
 $s_reset_password_msg2 = 'Скидання паролю зробить ваш пароль порожнім.';
-$s_show_all_users = 'ВСІ';
-$s_users_unused = 'Невикористані';
-$s_users_new = 'Нові';
 $s_account_reset_msg = 'Лист для підтвердження відправлений вам на вашу електронну адресу...';
 $s_account_reset_msg2 = 'Запису задано порожній пароль…';
 $s_account_unlock_msg = 'Обліковий запис розблоковано.';
@@ -1170,10 +1167,6 @@ $s_tags = 'Теги';
 $s_tag_details = 'Подробиці тегу: %1$s';
 $s_tag_id = 'Ідентифікатор тегу';
 $s_tag_name = 'Назва';
-$s_tag_creator = 'Автор';
-$s_tag_created = 'Дата створення';
-$s_tag_updated = 'Останнє оновлення';
-$s_tag_description = 'Опис тегів';
 $s_tag_statistics = 'Статистика використання';
 $s_tag_update = 'Оновити тег:%1$s';
 $s_tag_update_return = 'Назад до тега';
@@ -1196,9 +1189,8 @@ $s_tag_history_detached = 'Тег відкріплено';
 $s_tag_history_renamed = 'Тег перейменовано';
 $s_tag_related = 'Пов\'язані теги';
 $s_tag_related_issues = 'Пов\'язані проблеми (%1$s)';
-$s_tag_stats_attached = 'Прикріплені проблеми: %1$s';
+$s_tag_stats_attached = 'Прикріплені проблеми';
 $s_tag_create = 'Створити тег';
-$s_show_all_tags = 'Усі';
 $s_time_tracking_billing_link = 'Облік часу';
 $s_time_tracking = 'Облік часу';
 $s_time_tracking_time_spent = 'Витрачений час:';
@@ -1294,11 +1286,11 @@ $MANTIS_ERROR[ERROR_BUGNOTE_NOT_FOUND] = 'Коментар не знайдени
 $MANTIS_ERROR[ERROR_DB_FIELD_NOT_FOUND] = 'Не можу знайти поле «%1$s» бази даних.';
 $MANTIS_ERROR[ERROR_HANDLER_ACCESS_TOO_LOW] = 'Обробник проблем не має достатніх привілеїв на обробку проблеми з цим статусом.';
 $MANTIS_ERROR[ERROR_PROJECT_HIERARCHY_DISABLED] = 'Ієрархія проєкту відключена.';
-$MANTIS_ERROR[ERROR_PROJECT_NOT_FOUND] = 'Проект «%1$s» не знайдено.';
-$MANTIS_ERROR[ERROR_PROJECT_NAME_NOT_UNIQUE] = 'Такий проект вже існує. Поверніться назад і введіть іншу назву проєкта.';
+$MANTIS_ERROR[ERROR_PROJECT_NOT_FOUND] = 'Проєкт «%1$s» не знайдено.';
+$MANTIS_ERROR[ERROR_PROJECT_NAME_NOT_UNIQUE] = 'Такий проєкт вже існує. Поверніться назад і введіть іншу назву проєкта.';
 $MANTIS_ERROR[ERROR_PROJECT_NAME_INVALID] = 'Хибна назва проекта. Назва проєкта не може бути порожньою.';
 $MANTIS_ERROR[ERROR_PROJECT_RECURSIVE_HIERARCHY] = 'Ця операція зациклила б ієрархію підпроєктів.';
-$MANTIS_ERROR[ERROR_PROJECT_SUBPROJECT_DUPLICATE] = 'Проект «%1$s» вже є підпроєктом «%2$s».';
+$MANTIS_ERROR[ERROR_PROJECT_SUBPROJECT_DUPLICATE] = 'Проєкт «%1$s» вже є підпроєктом «%2$s».';
 $MANTIS_ERROR[ERROR_PROJECT_SUBPROJECT_NOT_FOUND] = 'Проєкт «%1$s» не є підпроєктом «%2$s».';
 $MANTIS_ERROR[ERROR_USER_BY_NAME_NOT_FOUND] = 'Користувача з ім’ям «%1$s» не знайдено.';
 $MANTIS_ERROR[ERROR_USER_BY_ID_NOT_FOUND] = 'Користувача з ім’ям «%1$d» не знайдено.';
@@ -1328,7 +1320,7 @@ $MANTIS_ERROR[ERROR_BUG_REVISION_NOT_FOUND] = 'Редакцію проблеми
 $MANTIS_ERROR[ERROR_CUSTOM_FIELD_NOT_FOUND] = 'Не можу знайти таке власне поле';
 $MANTIS_ERROR[ERROR_CUSTOM_FIELD_NAME_NOT_UNIQUE] = 'Таке ім\'я вже існує.';
 $MANTIS_ERROR[ERROR_CUSTOM_FIELD_NAME_INVALID] = 'Недійсна назва користувацького поля «%1$s»: коми не допускаються. Див. розділ «Локалізація користувацьких імен полів» у посібнику адміністратора.';
-$MANTIS_ERROR[ERROR_CUSTOM_FIELD_IN_USE] = 'Принаймні один проект використовує це поле.';
+$MANTIS_ERROR[ERROR_CUSTOM_FIELD_IN_USE] = 'Принаймні один проєкт використовує це поле.';
 $MANTIS_ERROR[ERROR_CUSTOM_FIELD_INVALID_VALUE] = 'Неприпустиме значення поля «%1$s».';
 $MANTIS_ERROR[ERROR_CUSTOM_FIELD_INVALID_DEFINITION] = 'Хибне означення власного поля';
 $MANTIS_ERROR[ERROR_CUSTOM_FIELD_INVALID_PROPERTY] = 'Недопустима властивість спеціального поля (%1$s).';
@@ -1347,7 +1339,7 @@ $MANTIS_ERROR[ERROR_CATEGORY_DUPLICATE] = 'Така категорія вже і
 $MANTIS_ERROR[ERROR_NO_COPY_ACTION] = 'Ніяких дій копіювання не задано';
 $MANTIS_ERROR[ERROR_CATEGORY_NOT_FOUND] = 'Не вдалось знайти таку категорію.';
 $MANTIS_ERROR[ERROR_CATEGORY_NOT_FOUND_FOR_PROJECT] = 'Категорію «%1$s» для проєкту «%2$s» не знайдено.';
-$MANTIS_ERROR[ERROR_CATEGORY_CANNOT_DELETE_DEFAULT] = 'Не можна вилучити цю категорію, бо вона визначається як «Типова категорія для переміщення».';
+$MANTIS_ERROR[ERROR_CATEGORY_CANNOT_UPDATE_DEFAULT] = 'Не можна вилучити цю категорію, бо вона визначається як «Типова категорія для переміщення».';
 $MANTIS_ERROR[ERROR_CATEGORY_CANNOT_DELETE_HAS_ISSUES] = 'Категорія «%1$s» не може бути видалена, тому що вона пов’язана з однією або декількома проблемами.';
 $MANTIS_ERROR[ERROR_VERSION_DUPLICATE] = 'Така версія вже існує.';
 $MANTIS_ERROR[ERROR_VERSION_NOT_FOUND] = 'Версію «%1$s» не знайдено.';
@@ -1446,3 +1438,7 @@ $s_move = 'Перенести';
 $s_close = 'Закрити';
 $s_add = 'Додати';
 $s_login = 'Увійти';
+$s_filter_all = 'ВСІ';
+$s_filter_new = 'Нові';
+$s_filter_unused_tags = 'Невикористані';
+$s_filter_unused = 'Невикористані';

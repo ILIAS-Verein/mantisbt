@@ -29,7 +29,7 @@ layout_page_header();
 layout_page_begin( 'summary_page.php' );
 
 $t_filter = summary_get_filter();
-print_summary_menu( 'developer_graph.php', $t_filter );
+print_summary_menu( 'project_graph.php', $t_filter );
 
 # Submenu
 $t_mantisgraph = plugin_get();
@@ -48,7 +48,7 @@ $t_mantisgraph->print_submenu();
 
 <?php
 			$t_metrics = create_cumulative_bydate( $t_filter );
-			if ( $t_metrics != null ) {
+			if ( $t_metrics ) {
 				graph_cumulative_bydate( $t_metrics, 2 /*wfactor*/ );
 			}
 ?>

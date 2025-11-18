@@ -24,9 +24,12 @@
  *
  * @noinspection PhpIllegalPsrClassPathInspection, PhpComposerExtensionStubsInspection,
  * @noinspection PhpUndefinedMethodInspection
+ * @noinspection PhpComposerExtensionStubsInspection
  */
 
-require_once 'SoapBase.php';
+namespace Mantis\tests\soap;
+
+use SoapFault;
 
 /**
  * Test fixture for filter related webservice method.
@@ -563,7 +566,7 @@ class FilterTest extends SoapBase {
 		}
 
 		self::assertNotNull( $t_created_issue, 'Created issue with id ' . $t_issue_id . ' was not found.' );
-		self::assertObjectHasAttribute( 'monitors',
+		self::assertObjectHasProperty( 'monitors',
 			$t_created_issue,
 			'Created issue with id ' . $t_issue_id . ' does not have a "monitors" attribute'
 		);

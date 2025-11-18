@@ -212,23 +212,12 @@ echo '<div class="table-responsive">';
 echo '<table class="table table-bordered table-condensed">';
 
 if( $t_top_buttons_enabled ) {
-	echo '<thead><tr class="bug-nav">';
-	echo '<tr class="top-buttons noprint">';
-	echo '<td colspan="6">';
-	/** @noinspection PhpUnhandledExceptionInspection */
-	bug_view_action_buttons( $f_issue_id, $t_flags );
-	echo '</td>';
-	echo '</tr>';
-	echo '</thead>';
-}
-
-if( $t_bottom_buttons_enabled ) {
-	echo '<tfoot>';
-	echo '<tr class="noprint"><td colspan="6">';
+	echo '<thead>';
+	echo '<tr class="top-buttons noprint"><td colspan="6">';
 	/** @noinspection PhpUnhandledExceptionInspection */
 	bug_view_action_buttons( $f_issue_id, $t_flags );
 	echo '</td></tr>';
-	echo '</tfoot>';
+	echo '</thead>';
 }
 
 echo '<tbody>';
@@ -256,11 +245,18 @@ if( $t_flags['id_show'] || $t_flags['project_show'] || $t_flags['category_show']
 	echo '<td class="bug-project">', $t_flags['project_show'] && isset( $t_issue['project']['name'] ) ? string_display_line( $t_issue['project']['name'] ) : '', '</td>';
 
 	# Category
-	echo '<td class="bug-category">',
-		$t_flags['category_show'] && isset( $t_issue['category']['name'] )
-			? string_display_line( $t_issue['category']['name'] )
-			: '',
-		'</td>';
+	echo '<td class="bug-category">';
+	if( $t_flags['category_show'] && isset( $t_issue['category']['name'] ) ) {
+		if( $t_flags['can_update'] && !category_is_enabled( $t_issue['category']['id'] ) ) {
+			print_icon( 'warning',
+				'bigger-125 red',
+				lang_get( 'category_disabled' )
+			);
+			echo "&nbsp;";
+		}
+		echo string_display_line( $t_issue['category']['name'] );
+	}
+	echo '</td>';
 
 	# View Status
 	echo '<td class="bug-view-status">', $t_flags['view_state_show'] && isset( $t_issue['view_state']['label'] ) ? string_display_line( $t_issue['view_state']['label'] ) : '', '</td>';
@@ -273,9 +269,7 @@ if( $t_flags['id_show'] || $t_flags['project_show'] || $t_flags['category_show']
 
 	echo '</tr>';
 
-	# spacer
-	echo '<tr class="spacer"><td colspan="6"></td></tr>';
-	echo '<tr class="hidden"></tr>';
+	print_table_spacer( 6 );
 }
 
 #
@@ -551,9 +545,7 @@ if( ( $t_flags['versions_target_version_show'] && isset( $t_issue['target_versio
 
 event_signal( 'EVENT_VIEW_BUG_DETAILS', array( $f_issue_id ) );
 
-# spacer
-echo '<tr class="spacer"><td colspan="6"></td></tr>';
-echo '<tr class="hidden"></tr>';
+print_table_spacer( 6 );
 
 #
 # Bug Details (screen wide fields)
@@ -632,9 +624,7 @@ if( !empty( $t_result['issue']['attachments'] ) ) {
 	echo '</td></tr>';
 }
 
-# spacer
-echo '<tr class="spacer"><td colspan="6"></td></tr>';
-echo '<tr class="hidden"></tr>';
+print_table_spacer( 6 );
 
 # Custom Fields
 if( isset( $t_issue['custom_fields'] ) ) {
@@ -643,18 +633,28 @@ if( isset( $t_issue['custom_fields'] ) ) {
 		$t_class = $t_def['type'] == CUSTOM_FIELD_TYPE_TEXTAREA ? ' cfdef-textarea' : '';
 
 		echo '<tr>';
-		echo '<th class="bug-custom-field category">', string_display_line( lang_get_defaulted( $t_def['name'] ) ), '</th>';
+		echo '<th class="bug-custom-field category">', string_attribute( lang_get_defaulted( $t_def['name'] ) ), '</th>';
 		echo '<td class="bug-custom-field' . $t_class . '" colspan="5">';
 		print_custom_field_value( $t_def, $t_custom_field['field']['id'], $f_issue_id );
 		echo '</td></tr>';
 	}
 
-	# spacer
-	echo '<tr class="spacer"><td colspan="6"></td></tr>';
-	echo '<tr class="hidden"></tr>';
+	print_table_spacer( 6 );
 }
 
-echo '</tbody></table>';
+echo '</tbody>';
+
+if( $t_bottom_buttons_enabled ) {
+	echo '<tfoot>';
+	echo '<tr class="noprint"><td colspan="6">';
+	/** @noinspection PhpUnhandledExceptionInspection */
+	bug_view_action_buttons( $f_issue_id, $t_flags );
+	echo '</td></tr>';
+	echo '</tfoot>';
+}
+
+echo '</table>';
+
 echo '</div></div></div></div></div>';
 
 # User list sponsoring the bug
@@ -671,15 +671,14 @@ if( $t_flags['relationships_show'] ) {
 
 # User list monitoring the bug
 if( $t_flags['monitor_show'] ) {
-	$t_collapse_block = is_collapsed( 'monitoring' );
+	$t_collapse_block = is_collapsed( 'monitors' );
 	$t_block_css = $t_collapse_block ? 'collapsed' : '';
 	$t_block_icon = $t_collapse_block ? 'fa-chevron-down' : 'fa-chevron-up';
 ?>
 	<div class="col-md-12 col-xs-12">
-	<a id="monitors"></a>
 	<div class="space-10"></div>
 
-	<div id="monitoring" class="widget-box widget-color-blue2 <?php echo $t_block_css ?>">
+	<div id="monitors" class="widget-box widget-color-blue2 <?php echo $t_block_css ?>">
 		<div class="widget-header widget-header-small">
 			<h4 class="widget-title lighter">
 				<?php print_icon( 'fa-users', 'ace-icon' ); ?>
@@ -784,7 +783,6 @@ if( config_get( 'time_tracking_enabled' ) &&
 if( $t_flags['history_show'] && $f_history ) {
 ?>
 	<div class="col-md-12 col-xs-12">
-		<a id="history"></a>
 		<div class="space-10"></div>
 <?php
 	$t_collapse_block = is_collapsed( 'history' );
@@ -936,9 +934,10 @@ function bug_view_relationship_get_details( $p_bug_id, BugRelationshipData $p_re
 	}
 
 	# add summary
-	$t_relationship_info_html .= $t_td . string_display_line_links( $t_bug->summary );
+	$t_relationship_info_html .= $t_td 
+		. '<span class="padding-right-4">' . string_display_line_links( $t_bug->summary ) . '</span>';
 	if( VS_PRIVATE == $t_bug->view_state ) {
-		$t_relationship_info_html .= icon_get( 'fa-lock', '', lang_get( 'private' ) );
+		$t_relationship_info_html .= icon_get( 'fa-lock', 'ace-icon', lang_get( 'private' ) );
 	}
 
 	# add delete link if bug not read only and user has access level
@@ -1226,7 +1225,7 @@ function bug_view_button_bug_assign_to( BugData $p_bug ) {
 
 	# allow un-assigning if already assigned.
 	if( $p_bug->handler_id != 0 ) {
-		echo '<option value="0"></option>';
+		echo '<option value="0">&nbsp;</option>';
 	}
 
 	# 0 means currently selected

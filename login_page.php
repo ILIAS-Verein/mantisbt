@@ -32,6 +32,7 @@
  * @uses current_user_api.php
  * @uses database_api.php
  * @uses gpc_api.php
+ * @uses helper_api.php
  * @uses html_api.php
  * @uses lang_api.php
  * @uses print_api.php
@@ -47,6 +48,7 @@ require_api( 'constant_inc.php' );
 require_api( 'current_user_api.php' );
 require_api( 'database_api.php' );
 require_api( 'gpc_api.php' );
+require_api( 'helper_api.php' );
 require_api( 'html_api.php' );
 require_api( 'lang_api.php' );
 require_api( 'print_api.php' );
@@ -99,17 +101,14 @@ if( auth_automatic_logon_bypass_form() ) {
 	}
 
 	if( !is_blank( $f_return ) ) {
-		$t_uri .= '?return=' . string_url( $f_return );
+		$t_uri = helper_url_combine( $t_uri, [ 'return' => $f_return ] );
 	}
 
 	print_header_redirect( $t_uri );
 	exit;
 }
 
-# Login page shouldn't be indexed by search engines
-html_robots_noindex();
-
-layout_login_page_begin();
+layout_login_page_begin( $t_form_title );
 ?>
 
 <div class="col-md-offset-3 col-md-6 col-sm-10 col-sm-offset-1">
@@ -138,8 +137,8 @@ $t_upgrade_required = false;
 
 if( config_get_global( 'admin_checks' ) == ON ) {
 	# Check if the admin directory is accessible
-	$t_admin_dir = dirname( __FILE__ ) . '/admin';
-	$t_admin_dir_is_accessible = @file_exists( $t_admin_dir . '/.' );
+	$t_admin_dir = __DIR__ . '/admin';
+	$t_admin_dir_is_accessible = @is_readable( $t_admin_dir );
 	if( $t_admin_dir_is_accessible ) {
 		$t_warnings[] = lang_get( 'warning_admin_directory_present' );
 	}
@@ -184,8 +183,9 @@ if( config_get_global( 'admin_checks' ) == ON ) {
 	}
 
 	# Check for db upgrade for versions > 1.0.0 using new installer and schema
-	if( $t_admin_dir_is_accessible ) {
-		require_once( 'admin/schema.php' );
+	if( $t_admin_dir_is_accessible
+		&& @include_once( $t_admin_dir . '/schema.php' )
+	) {
 		/** @var array $g_upgrade */
 		$t_upgrades_reqd = count( $g_upgrade ) - 1;
 
@@ -265,7 +265,11 @@ if( $t_show_anonymous_login || $t_show_signup ) {
 	echo '<div class="toolbar center">';
 
 	if( $t_show_anonymous_login ) {
-		echo '<a class="back-to-login-link pull-right" href="login_anon.php?return=' . string_url( $f_return ) . '">' . lang_get( 'login_anonymously' ) . '</a>';
+		echo '<a class="back-to-login-link pull-right" href="',
+			helper_url_combine( 'login_anon.php', [
+				'return' => $f_return
+			] ),
+			'">', lang_get( 'login_anonymously' ), '</a>';
 	}
 
 	if( $t_show_signup ) {

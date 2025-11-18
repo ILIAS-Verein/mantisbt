@@ -144,6 +144,7 @@ event_declare_many( array(
 	'EVENT_TAG_DETACHED' => EVENT_TYPE_EXECUTE,
 
 	# Email notification events
+	'EVENT_EMAIL_CREATE_SEND_PROVIDER' => EVENT_TYPE_FIRST,
 	'EVENT_NOTIFY_USER_INCLUDE' => EVENT_TYPE_DEFAULT,
 	'EVENT_NOTIFY_USER_EXCLUDE' => EVENT_TYPE_DEFAULT,
 
@@ -157,6 +158,9 @@ event_declare_many( array(
 
 	# Authentication Events
 	'EVENT_AUTH_USER_FLAGS' => EVENT_TYPE_FIRST,
+	
+	# LDAP Cache attribute names
+	'EVENT_LDAP_CACHE_ATTRS' => EVENT_TYPE_DEFAULT,
 
 	'EVENT_CRONJOB' => EVENT_TYPE_EXECUTE
 ) );

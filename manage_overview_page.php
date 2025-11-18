@@ -75,17 +75,18 @@ print_manage_menu( 'manage_overview_page.php' );
 			<th class="category"><?php echo lang_get( 'schema_version' ) ?></th>
 			<td><?php echo config_get( 'database_version', 0, ALL_USERS, ALL_PROJECTS ) ?></td>
 		</tr>
-		<tr class="spacer">
-			<td colspan="2"></td>
-		</tr>
-		<tr class="hidden"></tr>
 	<?php
+	print_table_spacer( 2 );
 	$t_is_admin = current_user_is_administrator();
 	if( $t_is_admin ) {
 	?>
 		<tr>
 			<th class="category"><?php echo lang_get( 'php_version' ) ?></th>
 			<td><?php echo phpversion() ?></td>
+		</tr>
+		<tr>
+ 			<th class="category"><?php echo lang_get( 'os_information' ) ?></th>
+			<td><?php echo php_uname() ?></td>
 		</tr>
 		<tr>
 			<th class="category"><?php echo lang_get( 'database_driver' ) ?></th>
@@ -99,9 +100,7 @@ print_manage_menu( 'manage_overview_page.php' );
 				?>
 			</td>
 		</tr>
-		<tr class="spacer">
-			<td colspan="2"></td>
-		</tr>
+		<?php print_table_spacer( 2 ) ?>
 		<tr>
 			<th class="category"><?php echo lang_get( 'site_path' ) ?></th>
 			<td><?php echo config_get_global( 'absolute_path' ) ?></td>
@@ -114,10 +113,8 @@ print_manage_menu( 'manage_overview_page.php' );
 			<th class="category"><?php echo lang_get( 'plugin_path' ) ?></th>
 			<td><?php echo config_get_global( 'plugin_path' ) ?></td>
 		</tr>
-		<tr class="spacer">
-			<td colspan="2"></td>
-		</tr>
 	<?php
+		print_table_spacer( 2 );
 	}
 
 	event_signal( 'EVENT_MANAGE_OVERVIEW_INFO', array( $t_is_admin ) )

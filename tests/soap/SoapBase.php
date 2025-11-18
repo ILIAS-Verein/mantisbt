@@ -22,18 +22,27 @@
  * @copyright Copyright 2000 - 2002  Kenzaburo Ito - kenito@300baud.org
  * @copyright Copyright 2002  MantisBT Team - mantisbt-dev@lists.sourceforge.net
  * @link http://www.mantisbt.org
+ *
+ * @noinspection PhpComposerExtensionStubsInspection
  */
 
+namespace Mantis\tests\soap;
 
-$t_root_path = dirname( __FILE__, 3 ) . DIRECTORY_SEPARATOR;
+use Mantis\tests\core\MantisTestCase;
+use DateTimeImmutable;
+use DateTimeZone;
+use SoapClient;
 
-# MantisBT constants
-require_once ( $t_root_path . DIRECTORY_SEPARATOR . 'core/constant_inc.php' );
+# Includes
+require_once dirname( __DIR__ ) . '/TestConfig.php';
+
+# MantisBT Core API
+require_mantis_core();
 
 /**
  * Test cases for SoapEnum class.
  */
-class SoapBase extends PHPUnit\Framework\TestCase {
+class SoapBase extends MantisTestCase {
 	/**
 	 * @var SoapClient Soap Client
 	 */
@@ -125,6 +134,11 @@ class SoapBase extends PHPUnit\Framework\TestCase {
 			array_merge( $this->defaultSoapClientOptions, $this->extraSoapClientFlags() )
 		);
 
+		# Set Xdebug session cookie
+		if( !empty( $GLOBALS['MANTIS_TESTSUITE_XDEBUG_SESSION'] ) ) {
+			$this->client->__setCookie('XDEBUG_SESSION', $GLOBALS['MANTIS_TESTSUITE_XDEBUG_SESSION']);
+		}
+
 		$this->mantisPath = substr( $t_wsdl, 0, -strlen( 'api/soap/mantisconnect.php?wsdl' ) );
 
 		$this->userName = $GLOBALS['MANTIS_TESTSUITE_USERNAME'] ?? 'administrator';
@@ -201,7 +215,7 @@ class SoapBase extends PHPUnit\Framework\TestCase {
 	 * @return array
 	 */
 	protected function getIssueToAdd( $p_suffix = '' ) {
-		$t_summary = static::class . '::' . $this->getName();
+		$t_summary = $this->getTestName();
 		if( $p_suffix ) {
 			$t_summary .= '-' . $p_suffix;
 		}
@@ -275,12 +289,15 @@ class SoapBase extends PHPUnit\Framework\TestCase {
 	}
 
 	/**
-	 * Converts date to UTC
+	 * Converts date to UTC.
+	 *
 	 * @param string $p_date A valid date string.
-	 * @return DateTime object
+	 *
+	 * @return DateTimeImmutable object
+	 * @throws \DateMalformedStringException
 	 */
 	protected function dateToUTC( $p_date ) {
-		$t_conv_date = new DateTime( $p_date );
+		$t_conv_date = new DateTimeImmutable( $p_date );
 		return $t_conv_date->setTimeZone( new DateTimeZone( 'UTC' ) );
 	}
 
