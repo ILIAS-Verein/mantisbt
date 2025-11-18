@@ -38,7 +38,7 @@ class SemanticVersionFilterPlugin extends MantisPlugin {
 		if(version_should_show_product_version($project))
 		{
 			plugin_require_api("VersionFilter.php");
-			$p_chained_param[] = new FixedInFilter($project);
+			$p_chained_param[] = new VersionFilter($project);
 		}
 		return $p_chained_param;
 	}

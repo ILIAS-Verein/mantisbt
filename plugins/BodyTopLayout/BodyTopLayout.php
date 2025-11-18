@@ -25,9 +25,9 @@ class BodyTopLayoutPlugin extends MantisPlugin {
 
     function show_info(){
         return '<div style="background-color:#dddedf;border:1px solid #aaa;">
-            <li style="padding-left: 10px; padding-top: 5px; list-style-position: inside;"><a href="http://www.ilias.de/docu/goto_docu_pg_64419_4793.html" target="_blank">Hinweise zur Erstellung von Bugreports</a></li>
-            <li style="padding-left: 10px; list-style-position: inside;"><a href="http://www.ilias.de/docu/goto_docu_pg_68562_4793.html" target="_blank">Hinweise zum Priorisieren von Bugreports</a> <span style="font-size:small;">(nur Institutionelle Vereinsmitglieder)</span></li>
-            <li style="padding-left: 10px; padding-bottom: 5px;list-style-position: inside;"><span style="font-size:small;">Please report security issues to our security list </span><a href="mailto:security@lists.ilias.de" target="_blank">security@lists.ilias.de</a> </li>
+            <li style="padding-left: 10px; padding-top: 5px; list-style-position: inside;"><a href="https://docu.ilias.de/go/pg/64419_16626" target="_blank">Hinweise zur Erstellung von Bugreports</a></li>
+            <li style="padding-left: 10px; list-style-position: inside;"><a href="https://docu.ilias.de/go/pg/68562_16626" target="_blank">Hinweise zum Priorisieren von Bugreports</a> <span style="font-size:small;">(nur Institutionelle Vereinsmitglieder)</span></li>
+            <li style="padding-left: 10px; padding-bottom: 5px;list-style-position: inside;"><span style="font-size:small;">Please report security issues to our security list </span><a href="mailto:security@ilias.de" target="_blank">security@ilias.de</a> </li>
         </div>';
     }
 
